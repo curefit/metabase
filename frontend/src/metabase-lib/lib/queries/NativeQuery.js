@@ -101,6 +101,7 @@ export default class NativeQuery extends AtomicQuery {
   setDatabase(database: Database): NativeQuery {
     if (database.id !== this.databaseId()) {
       // TODO: this should reset the rest of the query?
+      console.log(database.id);
       return new NativeQuery(
         this._originalQuestion,
         assoc(this.datasetQuery(), "database", database.id),
@@ -117,6 +118,9 @@ export default class NativeQuery extends AtomicQuery {
 
   supportsNativeParameters(): boolean {
     const database = this.database();
+    if(database.engine === "mongo"){
+      database.features.push("native-parameters");
+    }
     return (
       database != null && _.contains(database.features, "native-parameters")
     );

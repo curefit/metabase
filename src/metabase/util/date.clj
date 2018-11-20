@@ -277,6 +277,13 @@
                        (* amount multiplier)))
      (->Timestamp cal))))
 
+(defn ndays
+      ([^Integer unit ^String date-format]
+        (def relative-var (* unit 86400000))
+        (println (format-date date-format (- (System/currentTimeMillis) relative-var)))
+        (format-date date-format (- (System/currentTimeMillis) relative-var))))
+
+
 (def ^:const date-extract-units
   "Units which return a (numerical, periodic) component of a date"
   #{:minute-of-hour :hour-of-day :day-of-week :day-of-month :day-of-year :week-of-year :month-of-year :quarter-of-year

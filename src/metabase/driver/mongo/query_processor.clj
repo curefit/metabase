@@ -449,6 +449,8 @@
    ;; does
    :Date       (fn [& _]
                  (du/format-date "EEE MMM dd yyyy HH:mm:ss z"))
+   :RelativeDateTimeValue  (fn [unit]
+                                (du/ndays unit "yyyy-MM-dd"))
    :NumberLong (fn [^String s]
                  (Long/parseLong s))
    :NumberInt  (fn [^String s]

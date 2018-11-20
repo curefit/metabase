@@ -462,6 +462,9 @@
   (instance? Param maybe-param))
 
 (defn- merge-query-map [query-map node]
+       (println "in merge-query-map")
+       (println (query-map))
+       (println (node))
   (cond
     (string? node)
     (update query-map :query str node)
@@ -522,6 +525,8 @@
   "Parse `s` for any parameters. Returns a seq of strings and `Param` instances"
   [s param-key->value]
   (let [{:keys [prefix delimited-strings]} (split-delimited-string "{{" "}}" s)]
+       (println prefix)
+       (println delimited-strings)
     (cons prefix
           (mapcat (fn [{:keys [delimited-body suffix]}]
                     [(-> delimited-body
@@ -533,6 +538,8 @@
 (defn- parse-params-and-throw
   "Same as `parse-params` but will throw an exception if there are any `NoValue` parameters"
   [s param-key->value]
+       (println s)
+       (println param-key->value)
   (let [results (parse-params s param-key->value)]
     (if-let [{:keys [param-key]} (m/find-first no-value-param? results)]
       (throw (ex-info (tru "Unable to substitute ''{0}'': param not specified.\nFound: {1}"
@@ -544,6 +551,8 @@
   "Attempts to parse `s`. Parses any optional clauses or parameters found, returns a query map."
   [s param-key->value]
   (let [{:keys [prefix delimited-strings]} (split-delimited-string "[[" "]]" s)]
+       (println "in here!")
+       (println (parse-params-and-throw prefix param-key->value))
     (reduce merge-query-map empty-query-map
             (apply concat (parse-params-and-throw prefix param-key->value)
                    (for [{:keys [delimited-body suffix]} delimited-strings
@@ -553,7 +562,7 @@
                        (concat optional-clause (parse-params-and-throw suffix param-key->value))))))))
 
 (defn- parse-template [sql param-key->value]
-  (-> sql
+       (-> sql
       (parse-optional param-key->value)
       (update :query str/trim)))
 
@@ -573,10 +582,27 @@
       (driver/database-id->driver database)
       (throw (IllegalArgumentException. "Could not resolve driver"))))
 
+(defn expand-mongo
+      [query map]
+      ;(println query)
+      (def query_string (-> query :native :query))
+      (doseq [[k v] map]
+      (def newkey1 (str/replace k ":" ""))
+      (def newkey (str "{{" newkey1 "}}"))
+      (def query_string (str/replace query_string newkey (str v))))
+      (def final_query (assoc-in query [:native :query] query_string))
+      (println final_query)
+      final_query)
+
+
 (defn expand
   "Expand parameters inside a *SQL* QUERY."
   [query]
+  (def x (query->params-map query))
   (binding [*driver*   (ensure-driver query)]
     (if (driver/driver-supports? *driver* :native-query-params)
       (update query :native expand-query-params (query->params-map query))
-      query)))
+      (if (empty? x)
+        query
+        (expand-mongo query x)))))
+
