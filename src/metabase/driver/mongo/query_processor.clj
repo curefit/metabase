@@ -451,6 +451,8 @@
                  (du/format-date "EEE MMM dd yyyy HH:mm:ss z"))
    :NumberLong (fn [^String s]
                  (Long/parseLong s))
+   :RelativeDateTimeValue  (fn [unit]
+                             (du/ndays unit "yyyy-MM-dd"))
    :NumberInt  (fn [^String s]
                  (Integer/parseInt s))})
 ;; we're missing NumberDecimal but not sure how that's supposed to be converted to a Java type

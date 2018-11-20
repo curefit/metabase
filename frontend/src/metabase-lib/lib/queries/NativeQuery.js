@@ -117,6 +117,9 @@ export default class NativeQuery extends AtomicQuery {
 
   supportsNativeParameters(): boolean {
     const database = this.database();
+    if(database.engine === "mongo"){
+          database.features.push("native-parameters");
+        }
     return (
       database != null && _.contains(database.features, "native-parameters")
     );

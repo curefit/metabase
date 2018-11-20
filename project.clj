@@ -11,7 +11,8 @@
             "generate-sample-dataset" ["with-profile" "+generate-sample-dataset" "run"]
             "profile" ["with-profile" "+profile" "run" "profile"]
             "h2" ["with-profile" "+h2-shell" "run" "-url" "jdbc:h2:./metabase.db" "-user" "" "-password" "" "-driver" "org.h2.Driver"]}
-  :dependencies [[org.clojure/clojure "1.9.0"]
+  :dependencies [[commons-codec/commons-codec "1.11"]
+                 [org.clojure/clojure "1.9.0"]
                  [org.clojure/core.async "0.3.442"]
                  [org.clojure/core.match "0.3.0-alpha4"]              ; optimized pattern matching library for Clojure
                  [org.clojure/core.memoize "0.5.9"]                   ; needed by core.match; has useful FIFO, LRU, etc. caching mechanisms
@@ -46,13 +47,13 @@
                                net.sourceforge.nekohtml/nekohtml
                                ring/ring-core]]
                  [com.clearspring.analytics/stream "2.9.5"            ; Various sketching algorithms
-                   :exclusions [org.slf4j/slf4j-api
-                                it.unimi.dsi/fastutil]]
+                  :exclusions [org.slf4j/slf4j-api
+                               it.unimi.dsi/fastutil]]
                  [com.draines/postal "2.0.2"]                         ; SMTP library
                  [com.google.apis/google-api-services-analytics       ; Google Analytics Java Client Library
                   "v3-rev154-1.23.0"]
                  [com.google.apis/google-api-services-bigquery        ; Google BigQuery Java Client Library
-                   "v2-rev387-1.23.0"]
+                  "v2-rev387-1.23.0"]
                  [com.jcraft/jsch "0.1.54"]                           ; SSH client for tunnels
                  [com.h2database/h2 "1.4.197"]                        ; embedded SQL database
                  [com.mattbertolini/liquibase-slf4j "2.0.0"]          ; Java Migrations lib
@@ -122,9 +123,9 @@
          :destroy metabase.core/destroy
          :reload-paths ["src"]}
   :eastwood {:exclude-namespaces
-             [:test-paths
-              metabase.driver.generic-sql                             ; SQLDriver causes Eastwood to fail. Skip this ns until issue is fixed: https://github.com/jonase/eastwood/issues/191
-              metabase.query-processor.middleware.binning]            ; Similarly Eastwood gets confused because this namespace relies on defrecord :load-ns options which it seems to ignore :(
+                              [:test-paths
+                               metabase.driver.generic-sql                             ; SQLDriver causes Eastwood to fail. Skip this ns until issue is fixed: https://github.com/jonase/eastwood/issues/191
+                               metabase.query-processor.middleware.binning]            ; Similarly Eastwood gets confused because this namespace relies on defrecord :load-ns options which it seems to ignore :(
              :add-linters [:unused-private-vars
                            :unused-namespaces
                            ;; These linters are pretty useful but give a few false positives and can't be selectively disabled (yet)
@@ -156,7 +157,7 @@
              :ci {:jvm-opts ["-Xmx2500m"]}
              :reflection-warnings {:global-vars {*warn-on-reflection* true}} ; run `lein check-reflection-warnings` to check for reflection warnings
              :expectations {:injections [(require 'metabase.test-setup  ; for test setup stuff
-                                                  'metabase.test.util)] ; for the toucan.util.test default values for temp models
+                                           'metabase.test.util)] ; for the toucan.util.test default values for temp models
                             :resource-paths ["test_resources"]
                             :env {:mb-test-setting-1 "ABCDEFG"
                                   :mb-run-mode "test"}

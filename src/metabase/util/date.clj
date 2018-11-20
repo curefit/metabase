@@ -282,6 +282,13 @@
   #{:minute-of-hour :hour-of-day :day-of-week :day-of-month :day-of-year :week-of-year :month-of-year :quarter-of-year
     :year})
 
+(defn ndays
+  ([^Integer unit ^String date-format]
+   (def relative-var (* unit 86400000))
+   (println (format-date date-format (- (System/currentTimeMillis) relative-var)))
+   (format-date date-format (- (System/currentTimeMillis) relative-var))))
+
+
 (defn date-extract
   "Extract `unit` from `date`. `date` defaults to now.
 

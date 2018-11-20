@@ -573,10 +573,26 @@
       (driver/database-id->driver database)
       (throw (IllegalArgumentException. "Could not resolve driver"))))
 
+(defn expand-mongo
+  [query map]
+  ;(println query)
+  (def query_string (-> query :native :query))
+  (doseq [[k v] map]
+    (def newkey1 (str/replace k ":" ""))
+    (def newkey (str "{{" newkey1 "}}"))
+    (def query_string (str/replace query_string newkey (str v))))
+  (def final_query (assoc-in query [:native :query] query_string))
+  (println final_query)
+  final_query)
+
 (defn expand
   "Expand parameters inside a *SQL* QUERY."
   [query]
+  (def x (query->params-map query))
+  (println x)
   (binding [*driver*   (ensure-driver query)]
     (if (driver/driver-supports? *driver* :native-query-params)
       (update query :native expand-query-params (query->params-map query))
-      query)))
+      (if (empty? x)
+        query
+        (expand-mongo query x)))))
