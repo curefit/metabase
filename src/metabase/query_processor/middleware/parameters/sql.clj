@@ -580,7 +580,10 @@
   (doseq [[k v] map]
     (def newkey1 (str/replace k ":" ""))
     (def newkey (str "{{" newkey1 "}}"))
-    (def query_string (str/replace query_string newkey (str v))))
+    (if (instance? Number v)
+      (def query_string (str/replace query_string newkey (str v)))
+      (def query_string (str/replace query_string newkey (str (clojure.string/join ["\"" v "\""])))))
+    (println query_string))
   (def final_query (assoc-in query [:native :query] query_string))
   (println final_query)
   final_query)
