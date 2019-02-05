@@ -4998,5 +4998,8 @@ databaseChangeLog:
             columns:
             - column:
                 name: timezone
+                defaultValue: default
                 type: varchar(254)
+                constraints:
+                  nullable: false
             tableName: core_user
