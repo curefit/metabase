@@ -4988,3 +4988,15 @@ databaseChangeLog:
         - dropColumn:
             tableName: metabase_field
             columnName: raw_column_id
+
+  - changeSet:
+        id: 92
+        author: Abhishek
+        comment: 'Timezone'
+        changes:
+        - addColumn:
+            columns:
+            - column:
+                name: timezone
+                type: varchar(254)
+            tableName: core_user
