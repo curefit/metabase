@@ -156,6 +156,7 @@
   {:first_name                        su/NonBlankString
    :last_name                         su/NonBlankString
    :email                             su/Email
+   :timezone                          su/NonBlankString
    (s/optional-key :password)         (s/maybe su/NonBlankString)
    (s/optional-key :login_attributes) (s/maybe LoginAttributes)
    (s/optional-key :google_auth)      s/Bool

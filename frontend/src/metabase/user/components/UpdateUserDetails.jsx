@@ -79,6 +79,7 @@ export default class UpdateUserDetails extends Component {
     user.first_name = ReactDOM.findDOMNode(this.refs.firstName).value;
     user.last_name = ReactDOM.findDOMNode(this.refs.lastName).value;
     user.email = ReactDOM.findDOMNode(this.refs.email).value;
+    user.timezone = ReactDOM.findDOMNode(this.refs.timeZone).value;
 
     this.props.submitFn(user);
   }
@@ -155,6 +156,28 @@ export default class UpdateUserDetails extends Component {
             />
             {!managed && <span className="Form-charm" />}
           </FormField>
+
+
+          <FormField fieldName="timezone" formError={formError}>
+            <FormLabel
+              title={t`Timezone`}
+              fieldName="timezone"
+              formError={formError}
+            />
+            <input
+              ref="timeZone"
+              className="Form-input Form-offset full"
+              name="timezone"
+              defaultValue={user ? user.timezone : null}
+              placeholder="timezone"
+              required
+              onChange={this.onChange.bind(this)}
+            />
+            <span className="Form-charm" />
+          </FormField>
+
+
+
 
           <div className="Form-actions">
             <button

@@ -43,6 +43,7 @@ export const updatePassword = createThunkAction(UPDATE_PASSWORD, function(
 export const updateUser = createThunkAction(UPDATE_USER, function(user) {
   return async function(dispatch, getState) {
     try {
+//      console.log(user);
       await UserApi.update(user);
 
       dispatch(refreshCurrentUser());

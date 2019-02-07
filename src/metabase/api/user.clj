@@ -102,10 +102,11 @@
 
 (api/defendpoint PUT "/:id"
   "Update an existing, active `User`."
-  [id :as {{:keys [email first_name last_name is_superuser login_attributes] :as body} :body}]
+  [id :as {{:keys [email first_name last_name timezone is_superuser login_attributes] :as body} :body}]
   {email            (s/maybe su/Email)
    first_name       (s/maybe su/NonBlankString)
    last_name        (s/maybe su/NonBlankString)
+   timezone         (s/maybe su/NonBlankString)
    login_attributes (s/maybe user/LoginAttributes)}
   (check-self-or-superuser id)
   ;; only allow updates if the specified account is active
@@ -120,9 +121,10 @@
        (u/select-keys-when body
          :present (when api/*is-superuser?*
                     #{:login_attributes})
-         :non-nil (set (concat [:first_name :last_name :email]
+         :non-nil (set (concat [:first_name :last_name :email :timezone]
                                (when api/*is-superuser?*
                                  [:is_superuser])))))))
+
   (fetch-user :id id))
 
 (api/defendpoint PUT "/:id/reactivate"
