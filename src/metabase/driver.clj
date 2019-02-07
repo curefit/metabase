@@ -26,7 +26,8 @@
             [metabase.util.date :as du]
             [puppetlabs.i18n.core :refer [trs tru]]
             [schema.core :as s]
-            [toucan.db :as db])
+            [toucan.db :as db]
+            [metabase.api.common :refer [*current-user*]])
   (:import clojure.lang.Keyword
            java.text.SimpleDateFormat
            org.joda.time.DateTime
@@ -348,7 +349,7 @@
   timezone and a report-timezone has been specified by the user"
   [driver]
   (when (driver-supports? driver :set-timezone)
-    (let [report-tz (report-timezone)]
+    (let [report-tz (:timezone @*current-user*)]
       (when-not (empty? report-tz)
         report-tz))))
 

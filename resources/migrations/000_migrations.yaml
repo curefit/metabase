@@ -4991,14 +4991,14 @@ databaseChangeLog:
 
   - changeSet:
         id: 92
-        author: Abhishek
+        author: Curefit
         comment: 'Timezone'
         changes:
         - addColumn:
             columns:
             - column:
                 name: timezone
-                defaultValue: default
+                defaultValue: Asia/Calcutta
                 type: varchar(254)
                 constraints:
                   nullable: false
