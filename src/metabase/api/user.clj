@@ -62,15 +62,16 @@
 
 (api/defendpoint POST "/"
   "Create a new `User`, return a 400 if the email address is already taken"
-  [:as {{:keys [first_name last_name email password login_attributes] :as body} :body}]
+  [:as {{:keys [first_name last_name email timezone password login_attributes] :as body} :body}]
   {first_name       su/NonBlankString
    last_name        su/NonBlankString
    email            su/Email
-   login_attributes (s/maybe user/LoginAttributes)}
+   login_attributes (s/maybe user/LoginAttributes)
+   timezone         (s/maybe su/NonBlankString)}
   (api/check-superuser)
   (api/checkp (not (db/exists? User :email email))
     "email" (tru "Email address already in use."))
-  (let [new-user-id (u/get-id (user/invite-user! (select-keys body [:first_name :last_name :email :password :login_attributes])
+  (let [new-user-id (u/get-id (user/invite-user! (select-keys body [:first_name :last_name :email :timezone :password :login_attributes])
                                                  @api/*current-user*))]
     (fetch-user :id new-user-id)))
 

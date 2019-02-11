@@ -118,6 +118,7 @@ export default class PeopleListingApp extends Component {
 
   onAddPerson = async user => {
     if (user) {
+      user.timezone = "Asia/Calcutta";
       let modal = MODAL_USER_ADDED_WITH_INVITE;
 
       // we assume invite style creation and tweak as needed if email not available
