@@ -4,6 +4,10 @@
    The new implementation uses prepared statement args instead of substituting them directly into the query,
    and is much better-organized and better-documented."
   (:require [clojure.string :as str]
+            [clj-time
+             [coerce :as coerce]
+             [core :as t]
+             [format :as time]]
             [honeysql.core :as hsql]
             [medley.core :as m]
             [metabase.driver :as driver]
@@ -416,7 +420,7 @@
 
   Date
   (->replacement-snippet-info [{:keys [s]}]
-    (create-replacement-snippet (du/->Timestamp s)))
+    (create-replacement-snippet (coerce/to-timestamp s)))
 
   DateRange
   (->replacement-snippet-info [{:keys [start end]}]
@@ -592,7 +596,6 @@
   "Expand parameters inside a *SQL* QUERY."
   [query]
   (def x (query->params-map query))
-  (println x)
   (binding [*driver*   (ensure-driver query)]
     (if (driver/driver-supports? *driver* :native-query-params)
       (update query :native expand-query-params (query->params-map query))
