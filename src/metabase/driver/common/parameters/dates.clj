@@ -126,7 +126,7 @@
    {:parser (regex->parser #"past([0-9]+)(day|week|month|year)s(~?)", [:int-value :unit :include-current?])
     :range  (fn [{:keys [unit int-value unit-range to-period include-current?]} dt]
               (unit-range (t/minus dt (to-period int-value))
-                          (t/minus dt (to-period (if (seq include-current?) 0 1)))))
+                          (t/minus dt (to-period (if (seq include-current?) -1 0)))))
     :filter (fn [{:keys [unit int-value include-current?]} field]
               [:time-interval field (- int-value) (keyword unit) {:include-current (boolean (seq include-current?))}])}
 

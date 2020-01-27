@@ -88,10 +88,11 @@
 
 (api/defendpoint POST "/"
   "Create a new `User`, return a 400 if the email address is already taken"
-  [:as {{:keys [first_name last_name email password group_ids login_attributes] :as body} :body}]
+  [:as {{:keys [first_name last_name email timezone password group_ids login_attributes] :as body} :body}]
   {first_name       su/NonBlankString
    last_name        su/NonBlankString
    email            su/Email
+   timezone         (s/maybe su/NonBlankString)
    group_ids        (s/maybe [su/IntGreaterThanZero])
    login_attributes (s/maybe user/LoginAttributes)}
   (api/check-superuser)
@@ -100,7 +101,7 @@
   (db/transaction
     (let [new-user-id (u/get-id (user/create-and-invite-user!
                                  (u/select-keys-when body
-                                   :non-nil [:first_name :last_name :email :password :login_attributes])
+                                   :non-nil [:first_name :last_name :email :timezone :password :login_attributes])
                                  @api/*current-user*))]
       (maybe-set-user-permissions-groups! new-user-id group_ids)
       (-> (fetch-user :id new-user-id)
@@ -126,10 +127,11 @@
 
 (api/defendpoint PUT "/:id"
   "Update an existing, active `User`."
-  [id :as {{:keys [email first_name last_name group_ids is_superuser login_attributes] :as body} :body}]
+  [id :as {{:keys [email first_name last_name timezone group_ids is_superuser login_attributes] :as body} :body}]
   {email            (s/maybe su/Email)
    first_name       (s/maybe su/NonBlankString)
    last_name        (s/maybe su/NonBlankString)
+   timezone         (s/maybe su/NonBlankString)
    group_ids        (s/maybe [su/IntGreaterThanZero])
    is_superuser     (s/maybe s/Bool)
    login_attributes (s/maybe user/LoginAttributes)}
@@ -147,7 +149,7 @@
        (u/select-keys-when body
          :present (when api/*is-superuser?*
                     #{:login_attributes})
-         :non-nil (set (concat [:first_name :last_name :email]
+         :non-nil (set (concat [:first_name :last_name :email :timezone]
                                (when api/*is-superuser?*
                                  [:is_superuser]))))))
     (maybe-set-user-permissions-groups! id group_ids is_superuser))

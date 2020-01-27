@@ -6,6 +6,7 @@
              [config :as config]
              [driver :as driver]]
             [metabase.query-processor.store :as qp.store]
+            [metabase.api.common :refer [*current-user*]]
             [metabase.util.i18n :refer [tru]])
   (:import java.time.ZonedDateTime))
 
@@ -28,7 +29,7 @@
 
 (defn- report-timezone-id* []
   (or *report-timezone-id-override*
-      (driver/report-timezone)))
+      (:timezone @*current-user*)))
 
 
 ;;; +----------------------------------------------------------------------------------------------------------------+

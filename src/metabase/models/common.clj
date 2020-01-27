@@ -31,6 +31,7 @@
    "Asia/Calcutta"
    "Asia/Colombo"
    "Asia/Dhaka"
+   "Asia/Dubai"
    "Asia/Hong_Kong"
    "Asia/Irkutsk"
    "Asia/Jerusalem"

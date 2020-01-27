@@ -51,6 +51,14 @@ const BASE_FORM_FIELDS: FormFieldDefinition[] = [
     placeholder: "youlooknicetoday@email.com",
     validate: email => !email && t`Email is required`,
   },
+  {
+      name: "timezone",
+      title: t`Timezone`,
+      placeholder: "Asia/Calcutta",
+      validate: timezone =>
+        (!timezone && t`Timezone is required.`) ||
+        (timezone && !(MetabaseSettings.get("timezones").includes(timezone)) && t`Please enter a valid timezone.`)
+  },
 ];
 
 const Users = createEntity({
