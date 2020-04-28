@@ -1,0 +1,19 @@
+service:
+  expose:
+    - 3000
+deployment:
+  probePort: 3000
+  probePath: /
+  podAnnotations:
+    iam.amazonaws.com/role: arn:aws:iam::035243212545:role/k8s-metabase
+  resources:
+    limits:
+      cpu: 2
+      memory: 8Gi
+    requests:
+      cpu: 100m
+      memory: 7Gi
+istio:
+  external:
+    hosts:
+    - metabasee.stage.curefit.co

@@ -1,0 +1,17 @@
+service:
+  expose:
+    - 9006
+deployment:
+  probePort: 9006
+  probePath: /healthCheck
+  resources:
+    limits:
+      cpu: 2
+      memory: 8Gi
+    requests:
+      cpu: 100m
+      memory: 7Gi
+istio:
+  external:
+    hosts:
+    - metabase.alpha.curefit.co
