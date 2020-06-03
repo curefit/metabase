@@ -166,7 +166,7 @@
          (u/select-keys-when body
            :present (when api/*is-superuser?*
                       #{:login_attributes})
-           :non-nil (set (concat [:first_name :last_name :email]
+           :non-nil (set (concat [:first_name :last_name :email :timezone]
                                  (when api/*is-superuser?*
                                    [:is_superuser]))))))
       (maybe-set-user-permissions-groups! id group_ids is_superuser)

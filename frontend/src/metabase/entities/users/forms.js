@@ -1,5 +1,7 @@
 import { t } from "ttag";
 
+import MetabaseSettings from "metabase/lib/settings";
+
 import { PLUGIN_ADMIN_USER_FORM_FIELDS } from "metabase/plugins";
 import validate from "metabase/lib/validate";
 import FormGroupsWidget from "metabase/components/form/widgets/FormGroupsWidget";
@@ -25,6 +27,14 @@ const DETAILS_FORM_FIELDS: FormFieldDefinition[] = [
     placeholder: "youlooknicetoday@email.com",
     validate: validate.required().email(),
   },
+  {
+    name: "timezone",
+    title: t`Timezone`,
+    placeholder: "Asia/Calcutta",
+    validate: timezone =>
+      (!timezone && t`Timezone is required.`) ||
+      (timezone && !(MetabaseSettings.get("available-timezones").includes(timezone)) && t`Please enter a valid timezone.`)
+   },
 ];
 
 const PASSWORD_FORM_FIELDS: FormFieldDefinition[] = [
