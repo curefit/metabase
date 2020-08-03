@@ -340,6 +340,7 @@ class Overworld extends React.Component {
                                   </Flex>
                                 </Box>
                               </Flex>
+                              <h4 className="text-wrap">{database.description ? database.description : "No description yet"}</h4>
                             </Box>
                           </Link>
                         </GridItem>
