@@ -29,7 +29,7 @@
    (s/optional-key :semantic-type)     (s/maybe su/FieldSemanticOrRelationType)
    (s/optional-key :effective-type)    (s/maybe su/FieldType)
    (s/optional-key :coercion-strategy) (s/maybe su/CoercionStrategy)
-   (s/optional-key :field-comment)     (s/maybe su/NonBlankString)
+   (s/optional-key :field-comment)     (s/maybe su/KeywordOrString)
    (s/optional-key :pk?)               s/Bool
    (s/optional-key :nested-fields)     #{(s/recursive #'TableMetadataField)}
    (s/optional-key :nfc-path)          [s/Any]
