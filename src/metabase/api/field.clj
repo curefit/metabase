@@ -98,7 +98,7 @@
                    coercion_strategy visibility_type has_field_values settings nfc_path]
             :as   body} :body}]
   {caveats            (s/maybe su/NonBlankString)
-   description        (s/maybe su/NonBlankString)
+   description        (s/maybe su/KeywordOrString)
    display_name       (s/maybe su/NonBlankString)
    fk_target_field_id (s/maybe su/IntGreaterThanZero)
    points_of_interest (s/maybe su/NonBlankString)
