@@ -668,7 +668,7 @@
   (qp.card/run-query-for-card-async
    card-id :api
    :parameters   parameters
-   :ignore_cache ignore_cache
+   :ignore_cache false
    :dashboard-id dashboard_id
    :context      (if collection_preview :collection :question)
    :middleware   {:process-viz-settings? false}))
@@ -688,7 +688,7 @@
    :context     (dataset-api/export-format->context export-format)
    :middleware  {:process-viz-settings?  true
                  :skip-results-metadata? true
-                 :ignore-cached-results? true
+                 :ignore-cached-results? false
                  :format-rows?           false
                  :js-int-to-string?      false}))
 

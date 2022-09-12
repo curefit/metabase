@@ -11,6 +11,7 @@
   `MB_QP_CACHE_BACKEND`. Refer to [[metabase.query-processor.middleware.cache-backend.interface]] for more details
   about how the cache backends themselves."
   (:require [clojure.tools.logging :as log]
+            [buddy.core.codecs :as codecs]
             [java-time :as t]
             [medley.core :as m]
             [metabase.config :as config]
@@ -192,6 +193,8 @@
                               (reducef rff context metadata rows)))))]
           (qp query
               (fn [metadata]
+                (println "==========saving query in cache============")
+                (println (codecs/bytes->hex query-hash))
                 (save-results-xform start-time-ms metadata query-hash (rff metadata)))
               (assoc context :reducef reducef')))))))
 
@@ -215,6 +218,7 @@
   (fn maybe-return-cached-results* [query rff context]
     (let [cacheable? (is-cacheable? query)]
       (log/tracef "Query is cacheable? %s" (boolean cacheable?))
+      (println "============in cacheable query=============")
       (if cacheable?
         (run-query-with-cache qp query rff context)
         (qp query rff context)))))

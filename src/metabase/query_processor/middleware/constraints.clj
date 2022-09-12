@@ -50,4 +50,5 @@
   most QP API endpoints."
   [qp]
   (fn [query rff context]
+    (println "added default constraints")
     (qp (add-default-userland-constraints* query) rff context)))

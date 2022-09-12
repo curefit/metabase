@@ -331,9 +331,11 @@
   "Process and run a 'userland' MBQL query (e.g. one ran as the result of an API call, scheduled Pulse, etc). Returns
   results in a format appropriate for consumption by FE client. Saves QueryExecution row in application DB."
   ([query info]
+   (println "==========in process query =================")
    (process-userland-query (assoc query :info info)))
 
   ([query info context]
+   (println "==========in process query =================")
    (process-userland-query (assoc query :info info) context)))
 
 (defn- add-default-constraints [query]
@@ -343,7 +345,9 @@
   "Same as [[process-query-and-save-execution!]] but will include the default max rows returned as a constraint. (This
   function is ulitmately what powers most API endpoints that run queries, including `POST /api/dataset`.)"
   ([query info]
+   (println "-------------we're in the first---------------")
    (process-query-and-save-execution! (add-default-constraints query) info))
 
   ([query info context]
+   (println "-------------we're in the first---------------")
    (process-query-and-save-execution! (add-default-constraints query) info context)))
