@@ -1109,10 +1109,14 @@ export default class Question {
         cardId: this.id(),
         dashboardId,
         dashcardId,
-        ignore_cache: ignoreCache,
+        ignore_cache: false,
         collection_preview: collectionPreview,
         parameters,
       };
+
+      console.log("--------query params-------------");
+      console.log(queryParams);
+
       return [
         await maybeUsePivotEndpoint(
           dashboardId ? DashboardApi.cardQuery : CardApi.query,
