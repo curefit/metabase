@@ -143,5 +143,6 @@
                         context))]
         (try
           (qp query rff* (assoc context :raisef raisef*))
+          (println "Actual Query Hash :- " (buddy.core.codecs/bytes->hex (qputil/query-hash query)))
           (catch Throwable e
             (raisef* e context)))))))

@@ -665,6 +665,8 @@
   ;;    POST /api/dashboard/:dashboard-id/card/:card-id/query
   ;;
   ;; endpoint instead. Or error in that situtation? We're not even validating that you have access to this Dashboard.
+                 (println "----------question print------------")
+                 (println parameters)
   (qp.card/run-query-for-card-async
    card-id :api
    :parameters   parameters
@@ -681,6 +683,8 @@
   [card-id export-format :as {{:keys [parameters]} :params}]
   {parameters    (s/maybe su/JSONString)
    export-format dataset-api/ExportFormat}
+                 (println "----------download print------------")
+                 (println (json/parse-string parameters keyword))
   (qp.card/run-query-for-card-async
    card-id export-format
    :parameters  (json/parse-string parameters keyword)

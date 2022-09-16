@@ -506,7 +506,7 @@ function ViewTitleHeaderRightSide(props) {
           isRunning={isRunning}
           isDirty={isResultDirty}
           isPreviewing={isPreviewing}
-          onRun={() => runQuestionQuery({ ignoreCache: false })}
+          onRun={() => runQuestionQuery({ ignoreCache: true })}
           onCancel={cancelQuery}
         />
       )}

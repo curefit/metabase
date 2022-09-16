@@ -10,6 +10,8 @@
             [metabase.models.card :as card :refer [Card]]
             [metabase.models.dashboard :refer [Dashboard]]
             [metabase.models.database :refer [Database]]
+            [buddy.core.hash :as hash]
+            [cheshire.core :as json]
             [metabase.models.query :as query]
             [metabase.public-settings :as public-settings]
             [metabase.query-processor :as qp]
@@ -180,6 +182,13 @@
       :or   {constraints (constraints/default-query-constraints)
              context     :question
              qp-runner   qp/process-query-and-save-execution!}}]
+  (println "card-id :-" card-id)
+  (println "export-format :-" export-format)
+  (println "constraints :- " constraints)
+  (println "context :- " context)
+  (println "middleware :- " middleware)
+  (println "run :- " run)
+  (println "ignore_cache :- " ignore_cache)
   {:pre [(int? card-id) (u/maybe? sequential? parameters)]}
   (let [run   (or run
                   ;; param `run` can be used to control how the query is ran, e.g. if you need to
@@ -203,6 +212,10 @@
                        :dashboard-id dashboard-id}
                 (and (:dataset card) (seq (:result_metadata card)))
                 (assoc :metadata/dataset-metadata (:result_metadata card)))]
+    (println "Query Hash :- " (buddy.core.codecs/bytes->hex (qputil/query-hash query)))
+    (println "Keys :- " (json/generate-string (qputil/select-keys-for-hashing-download query)))
+    (println "Query Hash with constrains :- " (buddy.core.codecs/bytes->hex (hash/sha3-256 (json/generate-string (qputil/select-keys-for-hashing-download query)))))
+    ;(println "Actual keys :- " (json/generate-string (qputil/select-keys-for-hashing-download query)))
     (api/check-not-archived card)
     (when (seq parameters)
       (validate-card-parameters card-id (normalize/normalize-fragment [:parameters] parameters)))
