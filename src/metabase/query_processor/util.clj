@@ -82,7 +82,7 @@
   (let [{:keys [constraints parameters], :as query} (select-keys query [:database :type :query :native :parameters
                                                                         :constraints])]
     (cond-> query
-            (empty? constraints) (assoc :constraints {:max-results 10000 :max-results-bare-rows 2000} )
+            (empty? constraints) (assoc :constraints {:max-results 10000 :max-results-bare-rows 5000} )
             (empty? parameters)  (dissoc :parameters))))
 
 (defn select-keys-for-hashing

@@ -5,6 +5,7 @@
             [metabase.util :as u]
             [metabase.util.i18n :refer [tru]]
             [schema.core :as s]
+            [toucan.db :as db]
             [toucan.models :as models]))
 
 (models/defmodel QueryExecution :query_execution)
@@ -27,3 +28,11 @@
           :pre-insert  pre-insert
           :pre-update  (fn [& _] (throw (Exception. (tru "You cannot update a QueryExecution!"))))
           :post-select post-select}))
+
+
+(defn get-result-rows
+  "Fetch the result rows for query with QUERY-HASH if available.
+   Returns `nil` if no information is available."
+  ^Integer [^bytes query-hash]
+  {:pre [(instance? (Class/forName "[B") query-hash)]}
+  (db/select-one-field :result_rows QueryExecution :hash query-hash {:order-by [[:started_at :desc]]}))

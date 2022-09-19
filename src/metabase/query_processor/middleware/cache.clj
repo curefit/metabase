@@ -21,6 +21,7 @@
             [metabase.query-processor.middleware.cache.impl :as impl]
             [metabase.query-processor.util :as qputil]
             [metabase.util :as u]
+            [cheshire.core :as json]
             [metabase.util.i18n :refer [trs]])
   (:import org.eclipse.jetty.io.EofException))
 

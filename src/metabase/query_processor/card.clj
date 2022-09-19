@@ -7,12 +7,14 @@
             [metabase.mbql.normalize :as normalize]
             [metabase.mbql.schema :as mbql.s]
             [metabase.mbql.util :as mbql.u]
+            [metabase.api.dataset :as dataset-api]
             [metabase.models.card :as card :refer [Card]]
             [metabase.models.dashboard :refer [Dashboard]]
             [metabase.models.database :refer [Database]]
             [buddy.core.hash :as hash]
             [cheshire.core :as json]
             [metabase.models.query :as query]
+            [metabase.models.query-execution :as query-execution]
             [metabase.public-settings :as public-settings]
             [metabase.query-processor :as qp]
             [metabase.query-processor.error-type :as qp.error-type]
@@ -182,13 +184,6 @@
       :or   {constraints (constraints/default-query-constraints)
              context     :question
              qp-runner   qp/process-query-and-save-execution!}}]
-  (println "card-id :-" card-id)
-  (println "export-format :-" export-format)
-  (println "constraints :- " constraints)
-  (println "context :- " context)
-  (println "middleware :- " middleware)
-  (println "run :- " run)
-  (println "ignore_cache :- " ignore_cache)
   {:pre [(int? card-id) (u/maybe? sequential? parameters)]}
   (let [run   (or run
                   ;; param `run` can be used to control how the query is ran, e.g. if you need to
@@ -212,13 +207,42 @@
                        :dashboard-id dashboard-id}
                 (and (:dataset card) (seq (:result_metadata card)))
                 (assoc :metadata/dataset-metadata (:result_metadata card)))]
-    (println "Query Hash :- " (buddy.core.codecs/bytes->hex (qputil/query-hash query)))
-    (println "Keys :- " (json/generate-string (qputil/select-keys-for-hashing-download query)))
-    (println "Query Hash with constrains :- " (buddy.core.codecs/bytes->hex (hash/sha3-256 (json/generate-string (qputil/select-keys-for-hashing-download query)))))
-    ;(println "Actual keys :- " (json/generate-string (qputil/select-keys-for-hashing-download query)))
     (api/check-not-archived card)
     (when (seq parameters)
       (validate-card-parameters card-id (normalize/normalize-fragment [:parameters] parameters)))
     (log/tracef "Running query for Card %d:\n%s" card-id
                 (u/pprint-to-str query))
     (run query info)))
+
+(defn download-from-cache?
+  [card-id export-format
+   & {:keys [parameters constraints context dashboard-id middleware ignore_cache]
+      :or   {constraints (constraints/default-query-constraints)
+             context     :question}}]
+  (let [card  (api/read-check (db/select-one [Card :id :name :dataset_query :database_id
+                                              :cache_ttl :collection_id :dataset :result_metadata]
+                                             :id card-id))
+        query (-> (assoc (query-for-card card parameters constraints middleware {:dashboard-id dashboard-id}) :async? true)
+                  (update :middleware (fn [middleware]
+                                        (merge
+                                          {:js-int-to-string? true :ignore-cached-results? ignore_cache}
+                                          middleware))))]
+    (if (< (query-execution/get-result-rows (hash/sha3-256 (json/generate-string (qputil/select-keys-for-hashing-download query)))) 2000)
+      (run-query-for-card-async
+        card-id :api
+        :parameters   parameters
+        :ignore_cache false
+        :context      (dataset-api/export-format->context export-format)
+        :middleware   {:process-viz-settings? false})
+      (run-query-for-card-async
+        card-id export-format
+        :parameters  (json/parse-string parameters keyword)
+        :constraints nil
+        :context     (dataset-api/export-format->context export-format)
+        :middleware  {:process-viz-settings?  true
+                      :skip-results-metadata? true
+                      :ignore-cached-results? true
+                      :format-rows?           false
+                      :js-int-to-string?      false}))
+    )
+  )
