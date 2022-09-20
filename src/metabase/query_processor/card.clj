@@ -185,7 +185,7 @@
              context     :question
              qp-runner   qp/process-query-and-save-execution!}}]
   {:pre [(int? card-id) (u/maybe? sequential? parameters)]}
-  (let [run   (or run
+  (let[run   (or run
                   ;; param `run` can be used to control how the query is ran, e.g. if you need to
                   ;; customize the `context` passed to the QP
                   (^:once fn* [query info]
@@ -207,6 +207,7 @@
                        :dashboard-id dashboard-id}
                 (and (:dataset card) (seq (:result_metadata card)))
                 (assoc :metadata/dataset-metadata (:result_metadata card)))]
+    (println "constraints :- " constraints)
     (api/check-not-archived card)
     (when (seq parameters)
       (validate-card-parameters card-id (normalize/normalize-fragment [:parameters] parameters)))
@@ -227,16 +228,16 @@
                                         (merge
                                           {:js-int-to-string? true :ignore-cached-results? ignore_cache}
                                           middleware))))]
-    (if (< (query-execution/get-result-rows (hash/sha3-256 (json/generate-string (qputil/select-keys-for-hashing-download query)))) 2000)
+    (if (< (query-execution/get-result-rows (hash/sha3-256 (json/generate-string (qputil/select-keys-for-hashing-download query)))) 5000)
       (run-query-for-card-async
-        card-id :api
+        card-id export-format
         :parameters   parameters
         :ignore_cache false
         :context      (dataset-api/export-format->context export-format)
         :middleware   {:process-viz-settings? false})
       (run-query-for-card-async
         card-id export-format
-        :parameters  (json/parse-string parameters keyword)
+        :parameters  parameters
         :constraints nil
         :context     (dataset-api/export-format->context export-format)
         :middleware  {:process-viz-settings?  true
