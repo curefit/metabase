@@ -207,7 +207,6 @@
                        :dashboard-id dashboard-id}
                 (and (:dataset card) (seq (:result_metadata card)))
                 (assoc :metadata/dataset-metadata (:result_metadata card)))]
-    (println "constraints :- " constraints)
     (api/check-not-archived card)
     (when (seq parameters)
       (validate-card-parameters card-id (normalize/normalize-fragment [:parameters] parameters)))
