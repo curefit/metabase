@@ -23,6 +23,9 @@ function EditQuestionInfoModal({ question, onClose, onSave }) {
 
   const onSubmit = useCallback(
     async card => {
+      if (card.cache_ttl === "") {
+        card.cache_ttl = null;
+      }
       await onSave({ ...question.card(), ...card });
       onClose();
     },

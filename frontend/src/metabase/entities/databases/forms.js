@@ -4,7 +4,6 @@ import { t, jt } from "ttag";
 import MetabaseSettings from "metabase/lib/settings";
 import { getElevatedEngines } from "metabase/lib/engine";
 import ExternalLink from "metabase/core/components/ExternalLink";
-import { PLUGIN_CACHING } from "metabase/plugins";
 import getFieldsForBigQuery from "./big-query-fields";
 
 import getFieldsForMongo from "./mongo-fields";
@@ -317,10 +316,16 @@ function getEngineOptions(currentEngine) {
 }
 
 function getDatabaseCachingField() {
-  const hasField =
-    PLUGIN_CACHING.databaseCacheTTLFormField &&
-    MetabaseSettings.get("enable-query-caching");
-  return hasField ? PLUGIN_CACHING.databaseCacheTTLFormField : null;
+  // const hasField =
+  //   PLUGIN_CACHING.databaseCacheTTLFormField &&
+  //   MetabaseSettings.get("enable-query-caching");
+  // return hasField ? PLUGIN_CACHING.databaseCacheTTLFormField : null;
+  return {
+    name: "cache_ttl",
+    title: t`Caching`,
+    type: "number",
+    placeholder: t`Cache TTL in Hours`,
+  };
 }
 
 const forms = {

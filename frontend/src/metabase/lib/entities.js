@@ -245,6 +245,11 @@ export function createEntity(def) {
         getState,
       ) => {
         // save the original object for undo
+        if ("cache_ttl" in entityObject) {
+          if (entityObject.cache_ttl === "") {
+            entityObject.cache_ttl = null;
+          }
+        }
         const originalObject = entity.selectors.getObject(getState(), {
           entityId: entityObject.id,
         });

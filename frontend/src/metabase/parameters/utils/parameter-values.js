@@ -28,7 +28,6 @@ export function getParameterValueFromQueryParams(
   metadata,
 ) {
   queryParams = queryParams || {};
-
   const fields = getFields(parameter, metadata);
   const maybeParameterValue = queryParams[parameter.slug || parameter.id];
 

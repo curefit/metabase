@@ -207,6 +207,9 @@ export const updateDatabase = function(database) {
 export const saveDatabase = function(database) {
   return async function(dispatch, getState) {
     const isUnsavedDatabase = !database.id;
+    if (database.cache_ttl === "") {
+      database.cache_ttl = null;
+    }
     if (isUnsavedDatabase) {
       await dispatch(createDatabase(database));
     } else {

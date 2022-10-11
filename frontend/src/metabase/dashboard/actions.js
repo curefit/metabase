@@ -463,7 +463,6 @@ export const fetchDashboardCardData = createThunkAction(
   FETCH_DASHBOARD_CARD_DATA,
   options => (dispatch, getState) => {
     const dashboard = getDashboardComplete(getState());
-
     const promises = getAllDashboardCards(dashboard)
       .map(({ card, dashcard }) => {
         if (!isVirtualDashCard(dashcard)) {
@@ -664,6 +663,7 @@ export const fetchCardData = createThunkAction(FETCH_CARD_DATA, function(
       );
     } else {
       // new dashcards and new additional series cards aren't yet saved to the dashboard, so they need to be run using the card query endpoint
+
       const endpoint =
         isNewDashcard(dashcard) || isNewAdditionalSeriesCard(card, dashcard)
           ? CardApi.query
@@ -1106,6 +1106,7 @@ export const fetchDashboardParameterValues = createThunkAction(
     dispatch,
     getState,
   ) => {
+    // console.log(query, parameters)
     const parameterValuesSearchCache = getDashboardParameterValuesSearchCache(
       getState(),
     );
