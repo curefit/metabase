@@ -13,19 +13,20 @@
             [schema.core :as s])
   (:import clojure.core.async.impl.channels.ManyToManyChannel))
 
-(defn- query-for-result-metadata [query]
+(defn- query-for-result-metadata [query card_id]
   ;; for purposes of calculating the actual Fields & types returned by this query we really only need the first
   ;; row in the results
   (let [query (-> query
-                  (assoc-in [:constraints :max-results] 1)
-                  (assoc-in [:constraints :max-results-bare-rows] 1)
-                  (assoc-in [:info :executed-by] api/*current-user-id*))]
+                  (assoc-in [:constraints :max-results] 10000)
+                  (assoc-in [:constraints :max-results-bare-rows] 5000)
+                  (assoc-in [:info :executed-by] api/*current-user-id*)
+                  (assoc-in [:cache-ttl] 5000))]
     ;; need add the constraints above before calculating hash because those affect the hash
     ;;
     ;; (normally middleware takes care of calculating query hashes for 'userland' queries but this is not
     ;; technically a userland query -- we don't want to save a QueryExecution -- so we need to add `executed-by`
     ;; and `query-hash` ourselves so the remark gets added)
-    (assoc-in query [:info :query-hash] (qputil/query-hash query))))
+    (assoc-in query [:info :query-hash] (qputil/query-hash query "background/ad-hoc"))))
 
 (defn- async-result-metadata-reducedf [result context]
   (let [results-metdata (or (get-in result [:data :results_metadata :columns])
@@ -40,7 +41,7 @@
   "Fetch the results metadata for a `query` by running the query and seeing what the QP gives us in return.
    This is obviously a bit wasteful so hopefully we can avoid having to do this. Returns a channel to get the
    results."
-  [query]
+  [query card_id]
   (binding [qpi/*disable-qp-logging* true]
     ;; for MBQL queries we can infer the columns just by preprocessing the query.
     (if-let [inferred-columns (not-empty (u/ignore-exceptions (qp/query->expected-cols query)))]
@@ -49,6 +50,6 @@
         (a/close! chan)
         chan)
       ;; for *native* queries we actually have to run it.
-      (let [query (query-for-result-metadata query)]
+      (let [query (query-for-result-metadata query card_id)]
         (qp/process-query-async query {:reducedf async-result-metadata-reducedf
-                                       :raisef   async-result-metdata-raisef})))))
+                                                :raisef   async-result-metdata-raisef})))))

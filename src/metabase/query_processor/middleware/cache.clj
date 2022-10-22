@@ -180,7 +180,7 @@
   [qp {:keys [cache-ttl middleware], :as query} rff {:keys [reducef], :as context}]
   ;; TODO - Query will already have `info.hash` if it's a userland query. I'm not 100% sure it will be the same hash,
   ;; because this is calculated after normalization, instead of before
-  (let [query-hash (qputil/query-hash query)
+  (let [query-hash (qputil/query-hash query "cache")
         result     (if (some? cache-ttl) (maybe-reduce-cached-results (:ignore-cached-results? middleware) query-hash cache-ttl rff context) ::miss)]
     (when (= result ::miss)
       (let [start-time-ms (System/currentTimeMillis)]
@@ -197,6 +197,7 @@
               (assoc context :reducef reducef')))))))
 
 (defn- is-cacheable? {:arglists '([query])} [{:keys [cache-ttl]}]
+  (println "Background query checks cache")
   (and (public-settings/enable-query-caching)
        (if (nil? cache-ttl) (def cache-ttl ::miss) cache-ttl)))
 

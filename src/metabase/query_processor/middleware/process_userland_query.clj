@@ -127,7 +127,7 @@
   etc.). This includes recording QueryExecution entries and returning the results in an FE-client-friendly format."
   [qp]
   (fn [query rff {:keys [raisef], :as context}]
-    (let [query          (assoc-in query [:info :query-hash] (qputil/query-hash query))
+    (let [query          (assoc-in query [:info :query-hash] (qputil/query-hash query "card | userland query"))
           execution-info (query-execution-info query)]
       (letfn [(rff* [metadata]
                 (add-and-save-execution-info-xform! execution-info (rff metadata)))

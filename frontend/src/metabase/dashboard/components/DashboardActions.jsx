@@ -50,6 +50,10 @@ export const getDashboardActions = (
   const canShareDashboard = hasCards;
   const canCreateSubscription = hasDataCards && canManageSubscriptions;
 
+  console.log("----dashboard------");
+  console.log(dashboard.ordered_cards);
+  // dashboard.ordered_cards.some(dashCard => console.log(t`Updated ${moment(dashCard.card.updated_at).fromNow()}`))
+
   if (!isEditing && !isEmpty && !isPublic) {
     // Getting notifications with static text-only cards doesn't make a lot of sense
     if (canCreateSubscription && !isFullscreen) {

@@ -682,6 +682,10 @@ export const fetchCardData = createThunkAction(FETCH_CARD_DATA, function(
           queryOptions,
         ),
       );
+      const dashboard = getDashboardComplete(getState());
+      console.log("----here in actions-------");
+      console.log(dashboard);
+      console.log(result.updated_at);
     }
 
     setFetchCardDataCancel(card.id, dashcard.id, null);

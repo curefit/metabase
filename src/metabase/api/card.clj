@@ -190,7 +190,7 @@
 
   This is also complicated because everything is optional, so we cannot assume the client will provide metadata and
   might need to save a metadata edit, or might need to use db-saved metadata on a modified dataset."
-  [{:keys [original-query query metadata original-metadata dataset?]}]
+  [{:keys [original-query query metadata card_id original-metadata dataset?]}]
   (let [valid-metadata? (and metadata (nil? (s/check qr/ResultsMetadata metadata)))]
     (cond
       (or
@@ -214,11 +214,11 @@
       (a/go (let [metadata' (if valid-metadata?
                               (map mbql.normalize/normalize-source-metadata metadata)
                               original-metadata)
-                  fresh     (a/<! (qp.async/result-metadata-for-query-async query))]
+                  fresh     (a/<! (qp.async/result-metadata-for-query-async query card_id))]
               (qputil/combine-metadata fresh metadata')))
       :else
       ;; compute fresh
-      (qp.async/result-metadata-for-query-async query))))
+      (qp.async/result-metadata-for-query-async query card_id))))
 
 (defn check-data-permissions-for-query
   "Make sure the Current User has the appropriate *data* permissions to run `query`. We don't want Users saving Cards
@@ -542,6 +542,7 @@
     (let [result-metadata-chan (result-metadata-async {:original-query    (:dataset_query card-before-update)
                                                        :query             dataset_query
                                                        :metadata          result_metadata
+                                                       :card_id           id
                                                        :original-metadata (:result_metadata card-before-update)
                                                        :dataset?          (if (some? dataset)
                                                                             dataset
