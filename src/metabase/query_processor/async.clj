@@ -17,9 +17,10 @@
   ;; for purposes of calculating the actual Fields & types returned by this query we really only need the first
   ;; row in the results
   (let [query (-> query
-                  (assoc-in [:constraints :max-results] 1)
-                  (assoc-in [:constraints :max-results-bare-rows] 1)
-                  (assoc-in [:info :executed-by] api/*current-user-id*))]
+                  (assoc-in [:constraints :max-results] 10000)
+                  (assoc-in [:constraints :max-results-bare-rows] 5000)
+                  (assoc-in [:info :executed-by] api/*current-user-id*)
+                  (assoc-in [:cache-ttl] 5000))]
     ;; need add the constraints above before calculating hash because those affect the hash
     ;;
     ;; (normally middleware takes care of calculating query hashes for 'userland' queries but this is not
