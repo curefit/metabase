@@ -40,9 +40,8 @@
 
 (defn- run-query-async
   [{:keys [database], :as query}
-   & {:keys [context constraints export-format qp-runner]
+   & {:keys [context export-format qp-runner]
       :or   {context       :ad-hoc
-             constraints (qp.constraints/default-query-constraints)
              export-format :api
              qp-runner     qp/process-query-and-save-with-max-results-constraints!}}]
   (when (and (not= (:type query) "internal")
@@ -66,13 +65,13 @@
                          (assoc :metadata/dataset-metadata (:result_metadata source-card)))]
     (binding [qp.perms/*card-id* source-card-id]
       (qp.streaming/streaming-response [context export-format]
-        (qp-runner (assoc-in query [:constraints] constraints) info context)))))
+        (qp-runner query info context)))))
 
 (api/defendpoint ^:streaming POST "/"
   "Execute a query and retrieve the results in the usual format."
   [:as {{:keys [database] :as query} :body}]
   {database (s/maybe s/Int)}
-  (run-query-async (update-in query [:middleware :js-int-to-string?] (fnil identity true))))
+  (run-query-async (update-in (assoc-in query [:constraints] (qp.constraints/default-query-constraints)) [:middleware :js-int-to-string?] (fnil identity true))))
 
 
 ;;; ----------------------------------- Downloading Query Results in Other Formats -----------------------------------
