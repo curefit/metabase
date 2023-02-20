@@ -35,4 +35,6 @@
    Returns `nil` if no information is available."
   ^Integer [^bytes query-hash]
   {:pre [(instance? (Class/forName "[B") query-hash)]}
-  (db/select-one-field :result_rows QueryExecution :hash query-hash {:order-by [[:started_at :desc]]}))
+  (if (some? (db/select-one-field :result_rows QueryExecution :hash query-hash {:order-by [[:started_at :desc]]}))
+    (db/select-one-field :result_rows QueryExecution :hash query-hash {:order-by [[:started_at :desc]]})
+    6000))
