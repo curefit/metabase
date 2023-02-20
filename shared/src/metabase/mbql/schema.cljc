@@ -1526,6 +1526,7 @@
           :public-dashboard
           :public-question
           :pulse
+          :api-download
           :question
           :xlsx-download))
 
