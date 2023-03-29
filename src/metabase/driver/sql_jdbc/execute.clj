@@ -491,12 +491,14 @@
    (let [remark   (qputil/query->remark driver outer-query)
          sql      (str "-- " remark "\n" sql)
          max-rows (limit/determine-query-max-rows outer-query)]
-     (execute-reducible-query driver sql params max-rows context respond)))
+     (execute-reducible-query driver sql params max-rows context respond outer-query)))
 
-  ([driver sql params max-rows context respond]
+  ([driver sql params max-rows context respond outer-query]
    (with-open [conn          (connection-with-timezone driver (qp.store/database) (qp.timezone/report-timezone-id-if-supported))
                stmt          (statement-or-prepared-statement driver conn sql params (context/canceled-chan context))
                ^ResultSet rs (try
+                               (if (= driver (keyword "starburst"))
+                                 (.setClientInfo conn (doto (java.util.Properties.) (.putAll {"ClientTags" (qputil/get-client-tags outer-query)}))))
                                (execute-statement-or-prepared-statement! driver stmt max-rows params sql)
                                (catch Throwable e
                                  (throw (ex-info (tru "Error executing query: {0}" (ex-message e))

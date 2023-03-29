@@ -7,6 +7,7 @@
             [metabase.driver :as driver]
             [metabase.util :as u]
             [metabase.util.schema :as su]
+            [metabase.models.user :as user]
             [schema.core :as s]))
 
 ;; TODO - I think most of the functions in this namespace that we don't remove could be moved to [[metabase.mbql.util]]
@@ -56,6 +57,15 @@
 (defmethod query->remark :default
   [_ query]
   (default-query->remark query))
+
+
+(defn get-client-tags
+  [{{:keys [executed-by query-hash card-id], :as _info} :info, query-type :type}]
+  (format "user-id:: '%s' query-hash:: '%s' user-info:: '%s' card-id:: '%S'"
+          executed-by
+          (codecs/bytes->hex query-hash)
+          (user/get-email-id executed-by)
+          card-id))
 
 
 ;;; ------------------------------------------------- Normalization --------------------------------------------------

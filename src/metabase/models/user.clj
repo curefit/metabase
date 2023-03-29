@@ -5,7 +5,7 @@
             [clojure.tools.logging :as log]
             [metabase.models.collection :as collection]
             [metabase.models.permissions :as perms]
-            [metabase.models.permissions-group :as group]
+            [metabase.models.permissions-group :as group :refer [PermissionsGroup]]
             [metabase.models.permissions-group-membership :as perm-membership :refer [PermissionsGroupMembership]]
             [metabase.models.session :refer [Session]]
             [metabase.plugins.classloader :as classloader]
@@ -318,6 +318,16 @@
     (db/update! User user-id
       :reset_token     <>
       :reset_triggered (System/currentTimeMillis))))
+
+(defn get-email-id
+  "Fetch the result rows for query with QUERY-HASH if available.
+   Returns `nil` if no information is available."
+  ^String [user-id]
+  (apply str (db/query {:select    [:user.email :permissions_group.name]
+                        :from      [[User :user]]
+                        :left-join [[PermissionsGroupMembership :permissions_group_membership] [:= :user.id :permissions_group_membership.user_id]
+                                    [PermissionsGroup :permissions_group] [:= :permissions_group_membership.group_id :permissions_group.id]]
+                        :where     [:= :user.id user-id]})))
 
 (defn form-password-reset-url
   "Generate a properly formed password reset url given a password reset token."
