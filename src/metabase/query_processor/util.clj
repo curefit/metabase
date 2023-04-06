@@ -8,6 +8,7 @@
             [metabase.util :as u]
             [metabase.util.schema :as su]
             [metabase.models.user :as user]
+            [metabase.models.query-execution :as query-execution]
             [schema.core :as s]))
 
 ;; TODO - I think most of the functions in this namespace that we don't remove could be moved to [[metabase.mbql.util]]
@@ -59,13 +60,31 @@
   (default-query->remark query))
 
 
+(defn query-speed [input-str]
+  (let [join-count (count (re-seq #"(?i)JOIN" input-str))
+        has-select (re-find #"(?i)SELECT" input-str)
+        has-where (re-find #"(?i)WHERE" input-str)]
+    (cond (and (> join-count 5)) "slow"
+          (and has-select (not has-where)) "slow"
+          :else "fast")))
+
+
 (defn get-client-tags
-  [{{:keys [executed-by query-hash card-id], :as _info} :info, query-type :type}]
-  (format "user-id:: '%s' query-hash:: '%s' user-info:: '%s' card-id:: '%S'"
-          executed-by
-          (codecs/bytes->hex query-hash)
-          (user/get-email-id executed-by)
-          card-id))
+  [{{:keys [executed-by query-hash card-id context], :as _info} :info, {:keys [query]} :native, query-type :type}]
+  (if query-hash
+     (do
+       (assert (instance? (Class/forName "[B") query-hash))
+       (format "%s, %s,%s, %s, %s, %s, %s"
+    ;      ['metabase-userid', 'card-id', 'email-id', 'Slow/Fast', 'Priveleged/Not Priveleged', 'Adhoc/Scheduled/Metabase Context']
+            (if executed-by executed-by -1)
+            (if card-id card-id -999)
+            (user/get-email-id executed-by)
+            ;(query-execution/get-slow-fast (if card-id card-id -999))
+            (query-speed query)
+            (user/get-group-name executed-by)
+            (str (name context))
+            (codecs/bytes->hex query-hash)))
+     (str "-1, -999, default@curefit.com, not_available, non-priority, scheduled, default-hash")))
 
 
 ;;; ------------------------------------------------- Normalization --------------------------------------------------

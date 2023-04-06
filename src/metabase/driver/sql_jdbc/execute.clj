@@ -354,6 +354,8 @@
     stmt))
 
 (defn- statement-or-prepared-statement ^Statement [driver conn sql params canceled-chan]
+  (if (= driver (keyword "starburst"))
+    (.setClientInfo conn (doto (java.util.Properties.) (.putAll {"ClientTags" (str "")}))))
   (if (use-statement? driver params)
     (statement* driver conn canceled-chan)
     (prepared-statement* driver conn sql params canceled-chan)))

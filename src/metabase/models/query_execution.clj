@@ -29,6 +29,15 @@
           :pre-update  (fn [& _] (throw (Exception. (tru "You cannot update a QueryExecution!"))))
           :post-select post-select}))
 
+(defn get-slow-fast
+  "Fetch the speed of the query for Trino Queue."
+  [card-id]
+  (let [running-time (db/select-one-field :running_time QueryExecution :card_id card-id :cache_hit false {:order-by [[:started_at :desc]]})]
+    (if running-time
+      (if (<= running-time 120000)
+        "fast"
+        "slow")
+      "not-available")))
 
 (defn get-result-rows
   "Fetch the result rows for query with QUERY-HASH if available.

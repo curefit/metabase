@@ -319,15 +319,30 @@
       :reset_token     <>
       :reset_triggered (System/currentTimeMillis))))
 
-(defn get-email-id
-  "Fetch the result rows for query with QUERY-HASH if available.
+(defn get-group-name
+  "Fetch the group name if available.
    Returns `nil` if no information is available."
   ^String [user-id]
-  (apply str (db/query {:select    [:user.email :permissions_group.name]
+  (let  [result (db/query {:select    [:permissions_group.name]
                         :from      [[User :user]]
-                        :left-join [[PermissionsGroupMembership :permissions_group_membership] [:= :user.id :permissions_group_membership.user_id]
+                        :join      [[PermissionsGroupMembership :permissions_group_membership] [:= :user.id :permissions_group_membership.user_id]
                                     [PermissionsGroup :permissions_group] [:= :permissions_group_membership.group_id :permissions_group.id]]
-                        :where     [:= :user.id user-id]})))
+                        :where     [:and
+                                    [:= :user.id user-id]
+                                    [:= :permissions_group.name "priority-queue" ]]})]
+    (if (get (first result) :name)
+      (get (first result) :name)
+      "non-priority-queue")))
+
+(defn get-email-id
+  "Fetch the email id for user-id."
+  ^String [user-id]
+  (let [result (db/query {:select    [:user.email]
+                          :from      [[User :user]]
+                          :where     [:= :user.id user-id]})]
+    (if (get (first result) :email)
+      (get (first result) :email)
+      "default@curefit.com")))
 
 (defn form-password-reset-url
   "Generate a properly formed password reset url given a password reset token."
