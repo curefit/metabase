@@ -5,8 +5,10 @@
             [clojure.data :as data]
             [clojure.tools.logging :as log]
             [clojure.walk :as walk]
+            [clj-http.client :as client]
             [compojure.core :refer [DELETE GET POST PUT]]
             [medley.core :as m]
+            [metabase.config :as config]
             [metabase.api.common :as api]
             [metabase.api.common.validation :as validation]
             [metabase.api.dataset :as dataset-api]
@@ -40,7 +42,8 @@
             [metabase.util.schema :as su]
             [schema.core :as s]
             [toucan.db :as db]
-            [toucan.hydrate :refer [hydrate]])
+            [toucan.hydrate :refer [hydrate]]
+            [clj-time.core :as time])
   (:import clojure.core.async.impl.channels.ManyToManyChannel
            java.util.UUID
            metabase.models.card.CardInstance))
@@ -148,6 +151,61 @@
                      card)))
             cards))))
 
+;(defn call-warnings-api [id]
+;  (try
+;    (let [response (client/get (str "http://localhost:9092/api/v1/metabase/" (str 18) "/warnings") {:timeout 3000})]
+;      (json/parse-string (:body response)))
+;    (catch java.net.SocketTimeoutException e
+;      (println "Error: Request timed out")
+;      nil)
+;    (catch Throwable e
+;      (println "Error occurred while calling API: " (.getMessage e))
+;      nil)))
+;(import '(java.net.http HttpClient HttpRequest BodyPublishers BodyHandlers))
+;
+;(defn http-post [url body]
+;  (let [client (HttpClient/newBuilder
+;                 :connectTimeout (java.time.Duration/ofSeconds 1)
+;                 :followRedirects false)
+;        .build)]
+;(-> (.POST (HttpRequest/newBuilder (java.net.URI/create url)))
+;    (.header "Content-Type" "application/json")
+;    (.timeout (java.time.Duration/ofSeconds 10))
+;    (.body (BodyPublishers/ofString body))
+;    (.build)
+;    (.send (BodyHandlers/ofString))
+;    (.body))))
+
+(defn call-warnings-api [id]
+  (try
+    (let [response (client/post (str (config/config-str :mb-garuda-backend) "api/v1/metabase/warnings")
+                                {:body (json/generate-string {:cardIds [id]})
+                                 :content-type :json
+                                 :socket-timeout 2000
+                                 :conn-timeout 2000
+                                 :conn-request-timeout 2000})]
+      (json/parse-string (:body response)))
+    (catch java.net.SocketTimeoutException e
+      (println "Error: Request timed out")
+      nil)
+    (catch Throwable e
+      (println "Error occurred while calling API: " (.getMessage e))
+      nil)))
+
+(api/defendpoint GET "/:id/warnings"
+  "Get latest Warnings for a Card."
+  [id]
+  (call-warnings-api id))
+
+(defn add-warnings-to-card
+  [{:keys [id] :as item}]
+  (try
+    (let [json-response (call-warnings-api id)]
+      (assoc item :warnings json-response))
+    (catch java.util.concurrent.TimeoutException e
+      (println "Call to warnings API timed out!")
+      (assoc item :warnings "Timeout"))))
+
 (api/defendpoint GET "/:id"
   "Get `Card` with ID."
   [id]
@@ -159,7 +217,8 @@
                         :last_query_start
                         :collection [:moderation_reviews :moderator_details])
                api/read-check
-               (last-edit/with-last-edit-info :card))
+               (last-edit/with-last-edit-info :card)
+               add-warnings-to-card)
     (events/publish-event! :card-read (assoc <> :actor_id api/*current-user-id*))))
 
 (api/defendpoint GET "/:id/timelines"

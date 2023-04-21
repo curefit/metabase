@@ -12,6 +12,7 @@ import SaveQuestionModal from "metabase/containers/SaveQuestionModal";
 import QuestionSavedModal from "metabase/components/QuestionSavedModal";
 import AddToDashSelectDashModal from "metabase/containers/AddToDashSelectDashModal";
 import EditQuestionInfoModal from "metabase/query_builder/components/view/EditQuestionInfoModal";
+import QuestionWarningsModalComponent from "metabase/query_builder/components/view/QuestionWarningsModalComponent";
 
 import CollectionMoveModal from "metabase/containers/CollectionMoveModal";
 import ArchiveQuestionModal from "metabase/query_builder/containers/ArchiveQuestionModal";
@@ -240,6 +241,13 @@ export default class QueryModals extends React.Component {
         <MoveEventModal
           eventId={modalContext}
           collectionId={question.collectionId()}
+          onClose={onCloseModal}
+        />
+      </Modal>
+    ) : modal === MODAL_TYPES.WARNINGS ? (
+      <Modal onClose={onCloseModal}>
+        <QuestionWarningsModalComponent
+          question={question}
           onClose={onCloseModal}
         />
       </Modal>

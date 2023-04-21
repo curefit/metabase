@@ -43,6 +43,7 @@ import {
   StyledLastEditInfoLabel,
   StyledCollectionBadge,
   StyledQuestionDataSource,
+  StyledQuestionWarnings,
 } from "./ViewHeader.styled";
 
 const viewTitleHeaderPropTypes = {
@@ -169,6 +170,7 @@ SavedQuestionLeftSide.propTypes = {
   onOpenQuestionDetails: PropTypes.func.isRequired,
   onCloseQuestionDetails: PropTypes.func.isRequired,
   onOpenQuestionHistory: PropTypes.func.isRequired,
+  onOpenModal: PropTypes.func,
 };
 
 function SavedQuestionLeftSide(props) {
@@ -180,6 +182,7 @@ function SavedQuestionLeftSide(props) {
     onCloseQuestionDetails,
     lastEditInfo,
     onOpenQuestionHistory,
+    onOpenModal,
   } = props;
 
   const onHeaderClick = useCallback(() => {
@@ -220,6 +223,15 @@ function SavedQuestionLeftSide(props) {
             subHead
           />
         )}
+        {question &&
+          question._card &&
+          question._card.warnings &&
+          question._card.warnings.length > 0 && (
+            <StyledQuestionWarnings
+              question={question}
+              onOpenModal={onOpenModal}
+            />
+          )}
       </ViewHeaderLeftSubHeading>
     </div>
   );

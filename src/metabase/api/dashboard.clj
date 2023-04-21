@@ -7,6 +7,7 @@
             [medley.core :as m]
             [metabase.analytics.snowplow :as snowplow]
             [metabase.api.common :as api]
+            [metabase.api.card :as api.card]
             [metabase.api.common.validation :as validation]
             [metabase.api.dataset :as api.dataset]
             [metabase.automagic-dashboards.populate :as populate]
@@ -148,9 +149,11 @@
   (u/ignore-exceptions
     [(qp-util/query-hash dataset_query)
      (qp-util/query-hash (assoc dataset_query :constraints (constraints/default-query-constraints)))]))
+
 (defn- dashcard->query-hashes
   "Return a sequence of all the query hashes for this `dashcard`, including the top-level Card and any Series."
   [{:keys [card series]}]
+  ;(println (assoc card :warnings (vec (api.card/call-warnings-api (get card :id)))))
   (reduce concat
           (card->query-hashes card)
           (for [card series]
@@ -177,7 +180,8 @@
   [card hash-vec->avg-time]
   (assoc card :query_average_duration (some (fn [query-hash]
                                               (hash-vec->avg-time (vec query-hash)))
-                                            (card->query-hashes card))))
+                                            (card->query-hashes card)))
+  (assoc card :warnings (vec (api.card/call-warnings-api (get card :id)))))
 
 (defn- add-query-average-duration-to-dashcards
   "Add `:query_average_duration` to the top-level Card and any Series in a sequence of `dashcards`."
@@ -193,8 +197,7 @@
 
 (defn add-query-average-durations
   "Add a `average_execution_time` field to each card (and series) belonging to `dashboard`."
-  [dashboard]
-  (update dashboard :ordered_cards add-query-average-duration-to-dashcards))
+  [dashboard] (update dashboard :ordered_cards add-query-average-duration-to-dashcards))
 
 (defn- get-dashboard
   "Get Dashboard with ID."

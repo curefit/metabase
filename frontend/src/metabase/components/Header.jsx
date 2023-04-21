@@ -18,6 +18,7 @@ import {
   HeaderButtonsContainer,
   HeaderButtonSection,
   StyledLastEditInfoLabel,
+  StyledWarningsLabel,
 } from "./Header.styled";
 
 const propTypes = {
@@ -119,7 +120,10 @@ class Header extends Component {
 
   render() {
     const { item, hasBadge, onLastEditInfoClick } = this.props;
+
     const hasLastEditInfo = !!item["last-edit-info"];
+    // const hasWarnings = !!item['ordered_cards'] && item['ordered_cards'].some((card) => card.card.hasOwnProperty('warnings'));
+    // const hasWarnings = true;
 
     let titleAndDescription;
     if (this.props.item && this.props.item.id != null) {
@@ -194,6 +198,18 @@ class Header extends Component {
                   onClick={onLastEditInfoClick}
                 />
               )}
+              {item &&
+                item.ordered_cards &&
+                item.ordered_cards.some(
+                  card =>
+                    Object.prototype.hasOwnProperty.call(
+                      card.card,
+                      "warnings",
+                    ) &&
+                    Array.isArray(card.card.warnings) &&
+                    card.card.warnings.length > 0 &&
+                    card.card.warnings.some(warning => warning !== null),
+                ) && <StyledWarningsLabel item={item} />}
             </HeaderBadges>
           </HeaderContent>
 

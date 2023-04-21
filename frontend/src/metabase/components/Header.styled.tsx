@@ -2,6 +2,7 @@ import styled from "@emotion/styled";
 import { css } from "@emotion/react";
 
 import LastEditInfoLabel from "metabase/components/LastEditInfoLabel";
+import DashboardWarnings from "metabase/components/DashboardWarnings";
 
 import { color } from "metabase/lib/colors";
 import {
@@ -60,6 +61,12 @@ export const HeaderBadgesDivider = styled.span`
 `;
 
 export const StyledLastEditInfoLabel = styled(LastEditInfoLabel)`
+  ${breakpointMaxSmall} {
+    margin-top: 4px;
+  }
+`;
+
+export const StyledWarningsLabel = styled(DashboardWarnings)`
   ${breakpointMaxSmall} {
     margin-top: 4px;
   }
