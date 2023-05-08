@@ -46,15 +46,29 @@ export default class FieldDetailContainer extends Component {
     metadata: PropTypes.object,
   };
 
-  async fetchContainerData() {
+  async fetchContainerData(showSchemaInHeader) {
+    let schema_name = null;
+    if (showSchemaInHeader) {
+      schema_name = this.props.table.schema_name
+        ? this.props.table.schema_name
+        : this.props.location.pathname.split("/")[5];
+    }
     await actions.wrappedFetchDatabaseMetadata(
       this.props,
       this.props.databaseId,
+      schema_name,
     );
   }
 
   UNSAFE_componentWillMount() {
-    this.fetchContainerData();
+    let showSchemaInHeader = null;
+    if (this.props.location.state) {
+      showSchemaInHeader = this.props.location.state?.showSchemaInHeader;
+    } else {
+      showSchemaInHeader =
+        this.props.location.pathname.split("/")[4] === "schema" ? true : false;
+    }
+    this.fetchContainerData(showSchemaInHeader);
   }
 
   UNSAFE_componentWillReceiveProps(newProps) {
@@ -73,7 +87,14 @@ export default class FieldDetailContainer extends Component {
         className="flex-full relative"
         style={isEditing ? { paddingTop: "43px" } : {}}
         sidebar={
-          <FieldSidebar database={database} table={table} field={field} />
+          <FieldSidebar
+            database={database}
+            table={table}
+            field={field}
+            showSchemaInHeader={
+              this.props.location.pathname.split("/")[4] === "schema"
+            }
+          />
         }
       >
         <FieldDetail {...this.props} />

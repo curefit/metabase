@@ -43,15 +43,30 @@ export default class TableQuestionsContainer extends Component {
     isEditing: PropTypes.bool,
   };
 
-  async fetchContainerData() {
+  async fetchContainerData(showSchemaInHeader) {
+    let schema_name = null;
+    if (showSchemaInHeader) {
+      schema_name = this.props.table.schema_name
+        ? this.props.table.schema_name
+        : this.props.location.pathname.split("/")[5];
+    }
     await actions.wrappedFetchDatabaseMetadataAndQuestion(
       this.props,
       this.props.databaseId,
+      schema_name,
+      this.props.table.id,
     );
   }
 
   UNSAFE_componentWillMount() {
-    this.fetchContainerData();
+    let showSchemaInHeader = null;
+    if (this.props.location.state) {
+      showSchemaInHeader = this.props.location.state?.showSchemaInHeader;
+    } else {
+      showSchemaInHeader =
+        this.props.location.pathname.split("/")[4] === "schema" ? true : false;
+    }
+    this.fetchContainerData(showSchemaInHeader);
   }
 
   UNSAFE_componentWillReceiveProps(newProps) {
@@ -69,7 +84,15 @@ export default class TableQuestionsContainer extends Component {
       <SidebarLayout
         className="flex-full relative"
         style={isEditing ? { paddingTop: "43px" } : {}}
-        sidebar={<TableSidebar database={database} table={table} />}
+        sidebar={
+          <TableSidebar
+            database={database}
+            table={table}
+            showSchemaInHeader={
+              this.props.location.pathname.split("/")[4] === "schema"
+            }
+          />
+        }
       >
         <TableQuestions {...this.props} />
       </SidebarLayout>

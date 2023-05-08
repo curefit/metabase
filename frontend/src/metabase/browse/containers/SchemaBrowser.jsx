@@ -22,6 +22,7 @@ function SchemaBrowser(props) {
   const { schemas, params } = props;
   const { slug } = params;
   const dbId = Urls.extractEntityId(slug);
+
   return (
     <div>
       {schemas.length === 1 ? (

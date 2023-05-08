@@ -37,18 +37,34 @@ const Databases = createEntity({
   objectActions: {
     fetchDatabaseMetadata: createThunkAction(
       FETCH_DATABASE_METADATA,
-      ({ id }, { reload = false, params } = {}) => (dispatch, getState) =>
+      ({ id, schema_name }, { reload = false, params } = {}) => (
+        dispatch,
+        getState,
+      ) =>
         fetchData({
           dispatch,
           getState,
-          requestStatePath: ["metadata", "databases", id],
-          existingStatePath: ["metadata", "databases", id],
+          requestStatePath: schema_name
+            ? ["metadata", "databases", id, "schema_name", schema_name]
+            : ["metadata", "databases", id],
+          existingStatePath: schema_name
+            ? ["metadata", "databases", id, "schema_name", schema_name]
+            : ["metadata", "databases", id],
           getData: async () => {
-            const databaseMetadata = await MetabaseApi.db_metadata({
-              dbId: id,
-              ...params,
-            });
-            return normalize(databaseMetadata, DatabaseSchema);
+            if (schema_name != null) {
+              const databaseMetadata = await MetabaseApi.db_metadata_schema({
+                dbId: id,
+                schema_name: schema_name,
+                ...params,
+              });
+              return normalize(databaseMetadata, DatabaseSchema);
+            } else {
+              const databaseMetadata = await MetabaseApi.db_metadata({
+                dbId: id,
+                ...params,
+              });
+              return normalize(databaseMetadata, DatabaseSchema);
+            }
           },
           reload,
         }),

@@ -45,11 +45,11 @@ export const hideDashboardModal = createAction(HIDE_DASHBOARD_MODAL);
 // Helper functions. This is meant to be a transitional state to get things out of tryFetchData() and friends
 
 const fetchDataWrapper = (props, fn) => {
-  return async argument => {
+  return async (argument1, argument2, argument3) => {
     props.clearError();
     props.startLoading();
     try {
-      await fn(argument);
+      await fn(argument1, argument2, argument3);
     } catch (error) {
       console.error(error);
       props.setError(error);
@@ -59,20 +59,31 @@ const fetchDataWrapper = (props, fn) => {
   };
 };
 
-export const wrappedFetchDatabaseMetadata = (props, databaseID) => {
-  fetchDataWrapper(props, props.fetchDatabaseMetadata)(databaseID);
+export const wrappedFetchDatabaseMetadata = (
+  props,
+  databaseID,
+  schema_name,
+  reload,
+) => {
+  fetchDataWrapper(props, props.fetchDatabaseMetadata)(
+    databaseID,
+    schema_name,
+    reload,
+  );
 };
 
 export const wrappedFetchDatabaseMetadataAndQuestion = async (
   props,
   databaseID,
+  schema_name,
+  reload,
 ) => {
   fetchDataWrapper(props, async dbID => {
     await Promise.all([
-      props.fetchDatabaseMetadata(dbID),
+      props.fetchDatabaseMetadata(dbID, schema_name, reload),
       props.fetchQuestions(),
     ]);
-  })(databaseID);
+  })(databaseID, schema_name, reload);
 };
 export const wrappedFetchMetricDetail = async (props, metricID) => {
   fetchDataWrapper(props, async mID => {
@@ -233,6 +244,7 @@ const initialState = {
   isEditing: false,
   isFormulaExpanded: false,
   isDashboardModalOpen: false,
+  reload: true,
 };
 export default handleActions(
   {

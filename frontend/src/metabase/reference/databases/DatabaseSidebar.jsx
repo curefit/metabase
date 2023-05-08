@@ -26,12 +26,12 @@ const DatabaseSidebar = ({ database, style, className }) => (
           icon="document"
           name={t`Details`}
         />
-        <SidebarItem
+        {/* <SidebarItem
           key={`/reference/databases/${database.id}/tables`}
           href={`/reference/databases/${database.id}/tables`}
           icon="table2"
           name={t`Tables in ${database.name}`}
-        />
+        /> */}
       </ol>
     </ul>
   </div>

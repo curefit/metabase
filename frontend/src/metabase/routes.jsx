@@ -62,7 +62,6 @@ import SegmentRevisionsContainer from "metabase/reference/segments/SegmentRevisi
 import SegmentFieldListContainer from "metabase/reference/segments/SegmentFieldListContainer";
 import SegmentFieldDetailContainer from "metabase/reference/segments/SegmentFieldDetailContainer";
 // Reference Databases
-import DatabaseListContainer from "metabase/reference/databases/DatabaseListContainer";
 import DatabaseDetailContainer from "metabase/reference/databases/DatabaseDetailContainer";
 import TableListContainer from "metabase/reference/databases/TableListContainer";
 import TableDetailContainer from "metabase/reference/databases/TableDetailContainer";
@@ -315,7 +314,7 @@ export const getRoutes = store => (
             path="segments/:segmentId/revisions"
             component={SegmentRevisionsContainer}
           />
-          <Route path="databases" component={DatabaseListContainer} />
+          <Route path="databases" component={MetricListContainer} />
           <Route
             path="databases/:databaseId"
             component={DatabaseDetailContainer}
@@ -329,12 +328,28 @@ export const getRoutes = store => (
             component={TableDetailContainer}
           />
           <Route
+            path="databases/:databaseId/schema/:schemaName/tables/:tableId"
+            component={TableDetailContainer}
+          />
+          <Route
+            path="databases/:databaseId/schema/:schemaName/tables/:tableId/fields"
+            component={FieldListContainer}
+          />
+          <Route
             path="databases/:databaseId/tables/:tableId/fields"
             component={FieldListContainer}
           />
           <Route
+            path="databases/:databaseId/schema/:schemaName/tables/:tableId/fields/:fieldId"
+            component={FieldDetailContainer}
+          />
+          <Route
             path="databases/:databaseId/tables/:tableId/fields/:fieldId"
             component={FieldDetailContainer}
+          />
+          <Route
+            path="databases/:databaseId/schema/:schemaName/tables/:tableId/questions"
+            component={TableQuestionsContainer}
           />
           <Route
             path="databases/:databaseId/tables/:tableId/questions"

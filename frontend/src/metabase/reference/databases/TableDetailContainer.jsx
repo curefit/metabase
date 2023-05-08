@@ -40,33 +40,53 @@ export default class TableDetailContainer extends Component {
     isEditing: PropTypes.bool,
   };
 
-  async fetchContainerData() {
+  async fetchContainerData(showSchemaInHeader) {
+    let schema_name = null;
+    if (showSchemaInHeader) {
+      schema_name = this.props.table.schema_name
+        ? this.props.table.schema_name
+        : this.props.location.pathname.split("/")[5];
+    }
     await actions.wrappedFetchDatabaseMetadata(
       this.props,
       this.props.databaseId,
+      schema_name,
     );
   }
 
   UNSAFE_componentWillMount() {
-    this.fetchContainerData();
+    let showSchemaInHeader = null;
+    if (this.props.location.state) {
+      showSchemaInHeader = this.props.location.state?.showSchemaInHeader;
+    } else {
+      showSchemaInHeader =
+        this.props.location.pathname.split("/")[4] === "schema" ? true : false;
+    }
+    this.fetchContainerData(showSchemaInHeader);
   }
 
   UNSAFE_componentWillReceiveProps(newProps) {
     if (this.props.location.pathname === newProps.location.pathname) {
       return;
     }
-
     actions.clearState(newProps);
   }
 
   render() {
     const { database, table, isEditing } = this.props;
-
     return (
       <SidebarLayout
         className="flex-full relative"
         style={isEditing ? { paddingTop: "43px" } : {}}
-        sidebar={<TableSidebar database={database} table={table} />}
+        sidebar={
+          <TableSidebar
+            database={database}
+            table={table}
+            showSchemaInHeader={
+              this.props.location.pathname.split("/")[4] === "schema"
+            }
+          />
+        }
       >
         <TableDetail {...this.props} />
       </SidebarLayout>

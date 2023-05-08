@@ -58,6 +58,8 @@ const TableBrowser = ({
                 <TableBrowserItem
                   table={table}
                   dbId={dbId}
+                  schemaName={schemaName}
+                  showSchemaInHeader={showSchemaInHeader}
                   xraysEnabled={xraysEnabled}
                 />
               </TableLink>
@@ -75,9 +77,17 @@ const itemPropTypes = {
   table: PropTypes.object.isRequired,
   dbId: PropTypes.number,
   xraysEnabled: PropTypes.bool,
+  schemaName: PropTypes.string,
+  showSchemaInHeader: PropTypes.bool,
 };
 
-const TableBrowserItem = ({ table, dbId, xraysEnabled }) => {
+const TableBrowserItem = ({
+  table,
+  dbId,
+  schemaName,
+  showSchemaInHeader,
+  xraysEnabled,
+}) => {
   return (
     <EntityItem
       item={table}
@@ -91,6 +101,8 @@ const TableBrowserItem = ({ table, dbId, xraysEnabled }) => {
           <TableBrowserItemButtons
             tableId={table.id}
             dbId={dbId}
+            schemaName={schemaName}
+            showSchemaInHeader={showSchemaInHeader}
             xraysEnabled={xraysEnabled}
           />
         )
@@ -105,9 +117,17 @@ const itemButtonsPropTypes = {
   tableId: PropTypes.number,
   dbId: PropTypes.number,
   xraysEnabled: PropTypes.bool,
+  schemaName: PropTypes.string,
+  showSchemaInHeader: PropTypes.bool,
 };
 
-const TableBrowserItemButtons = ({ tableId, dbId, xraysEnabled }) => {
+const TableBrowserItemButtons = ({
+  tableId,
+  dbId,
+  schemaName,
+  showSchemaInHeader,
+  xraysEnabled,
+}) => {
   return (
     <Fragment>
       {xraysEnabled && (
@@ -124,7 +144,12 @@ const TableBrowserItemButtons = ({ tableId, dbId, xraysEnabled }) => {
         </TableActionLink>
       )}
       <TableActionLink
-        to={`/reference/databases/${dbId}/tables/${tableId}`}
+        to={{
+          pathname: `/reference/databases/${dbId}${
+            showSchemaInHeader ? `/schema/${schemaName}` : ""
+          }/tables/${tableId}`,
+          state: { showSchemaInHeader: showSchemaInHeader },
+        }}
         data-metabase-event={`${ANALYTICS_CONTEXT};Table Item;Reference Click`}
       >
         <Icon

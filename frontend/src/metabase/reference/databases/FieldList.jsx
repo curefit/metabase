@@ -172,7 +172,7 @@ export default class FieldList extends Component {
                               <Field
                                 field={entity}
                                 foreignKeys={foreignKeys}
-                                url={`/reference/databases/${table.db_id}/tables/${table.id}/fields/${entity.id}`}
+                                url={`/reference/databases/${table.db_id}/schema/${table.schema_name}/tables/${table.id}/fields/${entity.id}`}
                                 icon={getIconForField(entity)}
                                 isEditing={isEditing}
                                 formField={fields[entity.id]}
