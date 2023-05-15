@@ -4,6 +4,8 @@
    [metabase.driver.ddl.interface :as ddl.i]
    [metabase.driver.sql.util :as sql.u]
    [metabase.driver.util :as driver.u]
+   [toucan.db :as db]
+   [metabase.models.database :refer [Database]]
    [metabase.models.persisted-info :as persisted-info]
    [metabase.public-settings :as public-settings]))
 
@@ -28,12 +30,14 @@
   [{:keys [database_id table_name] :as _persisted-info}]
   (let [driver      (or driver/*driver* (driver.u/database->driver database_id))]
     ;; select * because we don't actually know the name of the fields when in the actual query. See #28902
+    (let [engine (db/select-one-field :engine Database :id database_id)]
+      (println "---in persist----")
     (format "select * from %s.%s"
             (sql.u/quote-name
              driver
              :table
-             (ddl.i/schema-name {:id database_id} (public-settings/site-uuid)))
+             (ddl.i/schema-name {:engine engine} (public-settings/site-uuid)))
             (sql.u/quote-name
              driver
              :table
-             table_name))))
+             table_name)))))

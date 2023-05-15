@@ -30,6 +30,7 @@
    [metabase.mbql.schema :as mbql.s]
    [metabase.mbql.util :as mbql.u]
    [metabase.models.card :refer [Card]]
+   [metabase.models.database :refer [Database]]
    [metabase.models.persisted-info
     :as persisted-info
     :refer [PersistedInfo]]
@@ -143,7 +144,8 @@
      (when (and persisted? log?)
        (log/info (trs "Found substitute cached query for card {0} from {1}.{2}"
                       card-id
-                      (ddl.i/schema-name {:id database-id} (public-settings/site-uuid))
+                      (let [engine (db/select-one-field :engine Database :id database-id)]
+                        (ddl.i/schema-name {:engine engine} (public-settings/site-uuid)))
                       (:table_name persisted-info))))
 
      ;; log the query at this point, it's useful for some purposes

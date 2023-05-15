@@ -39,6 +39,7 @@
                                               [:c.archived :card_archived]
                                               [:c.dataset :card_dataset]
                                               [:db.name :database_name]
+                                              [:db.engine :engine]
                                               [:col.id :collection_id] [:col.name :collection_name]
                                               [:col.authority_level :collection_authority_level]]
                                   :from      [[:persisted_info :p]]
@@ -53,9 +54,9 @@
                            offset            (sql.helpers/offset offset))]
     (as-> (t2/select PersistedInfo query) results
       (hydrate results :creator)
-      (map (fn [{:keys [database_id] :as pi}]
+      (map (fn [{:keys [database_id engine] :as pi}]
              (assoc pi
-                    :schema_name (ddl.i/schema-name {:id database_id} site-uuid-str)
+                    :schema_name (ddl.i/schema-name {:engine engine} site-uuid-str)
                     :next-fire-time (get-in db-id->fire-time [database_id :next-fire-time])))
            results))))
 

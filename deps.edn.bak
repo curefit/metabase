@@ -280,7 +280,7 @@
   ;; for ee dev: :dev:ee:ee-dev
   ;; for ee tests: clojure -X:dev:ee:ee-dev:test
   :ee-dev
-  {:extra-paths ["enterprise/backend/test" "modules/drivers/starburst/test"]}
+  {:extra-paths ["enterprise/backend/test"]}
 
   ;; these aliases exist for symmetry with the ee aliases. Empty for now.
   :oss
@@ -330,7 +330,7 @@
     "modules/drivers/sparksql/test"
     "modules/drivers/sqlite/test"
     "modules/drivers/sqlserver/test"
-    "modules/drivers/vertica/test" "modules/drivers/starburst/test"]}
+    "modules/drivers/vertica/test"]}
 
 ;;; Linters
 
@@ -575,7 +575,7 @@
   ;;; clj -X:dev:drivers:build:build-dev:build-test
   :build-test
   {:exec-fn   hawk.core/find-and-run-tests-cli
-   :exec-args {:only ["bin/build/test" "modules/drivers/starburst/test"]}}
+   :exec-args {:only ["bin/build/test"]}}
 
 
 ;;; Other misc convenience aliases

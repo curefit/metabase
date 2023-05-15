@@ -3,6 +3,7 @@
    [clojure.java.jdbc :as jdbc]
    [metabase.driver.ddl.interface :as ddl.i]
    [metabase.driver.sql.util :as sql.u]
+   [metabase.config :as config]
    [metabase.public-settings :as public-settings]))
 
 (defn- quote-fn [driver]
@@ -16,12 +17,23 @@
 (defn execute!
   "Executes sql and params with a standard remark prepended to the statement."
   [conn [sql & params]]
+  (println sql)
   (jdbc/execute! conn (into [(add-remark sql)] params)))
 
 (defn jdbc-query
   "Queries sql and params with a standard remark prepended to the statement."
   [conn [sql & params]]
   (jdbc/query conn (into [(add-remark sql)] params)))
+
+(defn create-schema-sql-data-lake
+  "SQL string to create a schema suitable"
+  [{driver :engine :as database}]
+  (println "are we here?")
+  (let [q (quote-fn driver)]
+    (format "create schema %s WITH ( LOCATION = '%s/%s/models/' )"
+            (ddl.i/schema-name database (public-settings/site-uuid))
+            (config/config-str :mb-data-lake-models-cache-location)
+            (ddl.i/schema-name database (public-settings/site-uuid)))))
 
 (defn create-schema-sql
   "SQL string to create a schema suitable"
