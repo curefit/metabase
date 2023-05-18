@@ -153,7 +153,7 @@ export const VisualizationDirtyState = ({
       hidden={!isRunnable || hidden}
       isRunning={isRunning}
       isDirty={isResultDirty}
-      onRun={() => runQuestionQuery({ ignoreCache: true })}
+      onRun={() => runQuestionQuery({ ignoreCache: false })}
       onCancel={() => cancelQuery()}
     />
   </div>

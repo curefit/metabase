@@ -775,24 +775,43 @@ saved later when it is ready."
    :middleware   {:process-viz-settings? false}))
 
 #_{:clj-kondo/ignore [:deprecated-var]}
-(api/defendpoint-schema ^:streaming POST "/:card-id/query/:export-format"
-  "Run the query associated with a Card, and return its results as a file in the specified format.
+;(api/defendpoint-schema ^:streaming POST "/:card-id/query/:export-format"
+;  "Run the query associated with a Card, and return its results as a file in the specified format.
+;
+;  `parameters` should be passed as query parameter encoded as a serialized JSON string (this is because this endpoint
+;  is normally used to power 'Download Results' buttons that use HTML `form` actions)."
+;  [card-id export-format :as {{:keys [parameters]} :params}]
+;  {parameters    (s/maybe su/JSONString)
+;   export-format api.dataset/ExportFormat}
+;  (qp.card/run-query-for-card-async
+;   card-id export-format
+;   :parameters  (json/parse-string parameters keyword)
+;   :constraints nil
+;   :context     (api.dataset/export-format->context export-format)
+;   :middleware  {:process-viz-settings?  true
+;                 :skip-results-metadata? true
+;                 :ignore-cached-results? true
+;                 :format-rows?           false
+;                 :js-int-to-string?      false}))
 
-  `parameters` should be passed as query parameter encoded as a serialized JSON string (this is because this endpoint
-  is normally used to power 'Download Results' buttons that use HTML `form` actions)."
-  [card-id export-format :as {{:keys [parameters]} :params}]
-  {parameters    (s/maybe su/JSONString)
-   export-format api.dataset/ExportFormat}
-  (qp.card/run-query-for-card-async
-   card-id export-format
-   :parameters  (json/parse-string parameters keyword)
-   :constraints nil
-   :context     (api.dataset/export-format->context export-format)
-   :middleware  {:process-viz-settings?  true
-                 :skip-results-metadata? true
-                 :ignore-cached-results? true
-                 :format-rows?           false
-                 :js-int-to-string?      false}))
+(api/defendpoint-schema ^:streaming POST "/:card-id/query/:export-format"
+   "Run the query associated with a Card, and return its results as a file in the specified format.
+
+   `parameters` should be passed as query parameter encoded as a serialized JSON string (this is because this endpoint
+   is normally used to power 'Download Results' buttons that use HTML `form` actions)."
+   [card-id export-format :as {{:keys [parameters]} :params}]
+   {parameters    (s/maybe su/JSONString)
+    export-format api.dataset/ExportFormat}
+   (qp.card/download-from-cache?
+     card-id export-format
+     :parameters  (json/parse-string parameters keyword)
+     :constraints nil
+     :context     (api.dataset/export-format->context export-format)
+     :middleware  {:process-viz-settings?  true
+                   :skip-results-metadata? true
+                   :ignore-cached-results? true
+                   :format-rows?           false
+                   :js-int-to-string?      false}))
 
 ;;; ----------------------------------------------- Sharing is Caring ------------------------------------------------
 

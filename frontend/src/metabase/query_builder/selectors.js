@@ -936,17 +936,18 @@ export const getAutocompleteResultsFn = state => {
   }
 
   return function autocompleteResults(query) {
-    const dbId = state.qb.card?.dataset_query?.database;
-    if (!dbId) {
-      return [];
-    }
+    // const dbId = state.qb.card?.dataset_query?.database;
+    // if (!dbId) {
+    //   return [];
+    // }
 
-    const apiCall = MetabaseApi.db_autocomplete_suggestions({
-      dbId,
-      query,
-      matchStyle,
-    });
-    return apiCall;
+    // const apiCall = MetabaseApi.db_autocomplete_suggestions({
+    //   dbId,
+    //   query,
+    //   matchStyle,
+    // });
+    // return apiCall;
+    return [];
   };
 };
 
