@@ -1702,6 +1702,7 @@
           :map-tiles
           :public-dashboard
           :public-question
+          :api-download
           :pulse
           :question
           :xlsx-download))

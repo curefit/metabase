@@ -6,7 +6,8 @@
    [metabase.models.collection :as collection]
    [metabase.models.interface :as mi]
    [metabase.models.permissions :as perms]
-   [metabase.models.permissions-group :as perms-group]
+   [metabase.models.permissions-group :as perms-group
+    :refer [PermissionsGroup]]
    [metabase.models.permissions-group-membership
     :as perms-group-membership
     :refer [PermissionsGroupMembership]]
@@ -31,6 +32,7 @@
 ;;; ----------------------------------------------- Entity & Lifecycle -----------------------------------------------
 
 (models/defmodel User :core_user)
+;(models/defmodel PermissionsGroupMembership :pgm)
 
 (def ^:private insert-default-values
   {:date_joined  :%now
@@ -368,6 +370,33 @@
     (db/update! User user-id
       :reset_token     <>
       :reset_triggered (System/currentTimeMillis))))
+
+(defn get-group-name
+  "Fetch the group name if available.
+   Returns `nil` if no information is available."
+  ^String [user-id]
+  (let  [result (mdb.query/query {:select    [:permissions_group.name]
+                           :from      [[:core_user :user]]
+                           :join      [[:permissions_group_membership :permissions_group_membership] [:= :user.id :permissions_group_membership.user_id]
+                                       [:permissions_group :permissions_group] [:= :permissions_group_membership.group_id :permissions_group.id]]
+                           :where     [:and
+                                       [:= :user.id user-id]
+                                       [:= :permissions_group.name "priority-queue" ]]})]
+    (if (get (first result) :name)
+      (get (first result) :name)
+      "non-priority-queue")))
+
+(defn get-email-id
+  "Fetch the email id for user-id."
+  ^String [user-id]
+  (let
+    ;[result (db/select-one-field :email User :id user-id)]
+    [result (mdb.query/query {:select    [:user.email]
+                              :from      [[:core_user :user]]
+                              :where     [:= :user.id user-id]})]
+    (if (get (first result) :email)
+      (get (first result) :email)
+      "default@curefit.com")))
 
 (defn form-password-reset-url
   "Generate a properly formed password reset url given a password reset token."

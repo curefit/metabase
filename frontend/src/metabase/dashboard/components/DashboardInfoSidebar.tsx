@@ -3,9 +3,6 @@ import _ from "underscore";
 import { t } from "ttag";
 import { connect } from "react-redux";
 
-import { PLUGIN_CACHING } from "metabase/plugins";
-import MetabaseSettings from "metabase/lib/settings";
-
 import DefaultTimeline from "metabase/components/Timeline";
 import EditableText from "metabase/core/components/EditableText";
 
@@ -43,8 +40,9 @@ const DashboardInfoSidebar = ({
 }: DashboardInfoSidebarProps) => {
   const canWrite = dashboard.can_write;
 
-  const showCaching =
-    PLUGIN_CACHING.isEnabled() && MetabaseSettings.get("enable-query-caching");
+  const showCaching = true;
+  // PLUGIN_CACHING.isEnabled() &&
+  // MetabaseSettings.get("enable-query-caching");
 
   const handleDescriptionChange = useCallback(
     async (description: string) => {
@@ -55,7 +53,7 @@ const DashboardInfoSidebar = ({
   );
 
   const handleUpdateCacheTTL = async (cache_ttl: number | null) => {
-    await setDashboardAttribute("cache_ttl", cache_ttl);
+    await setDashboardAttribute("cache_ttl", parseInt(cache_ttl));
     saveDashboardAndCards(dashboard.id);
   };
 
@@ -84,9 +82,17 @@ const DashboardInfoSidebar = ({
 
       {showCaching && (
         <ContentSection>
-          <PLUGIN_CACHING.DashboardCacheSection
+          {/* <PLUGIN_CACHING.DashboardCacheSection
             dashboard={dashboard}
             onSave={handleUpdateCacheTTL}
+          /> */}
+          <DescriptionHeader>{t`Caching`}</DescriptionHeader>
+          <EditableText
+            initialValue={dashboard.cache_ttl}
+            isDisabled={!dashboard.can_write}
+            onChange={handleUpdateCacheTTL}
+            placeholder={t`Cache TTL in Hours`}
+            key={`dashboard-cache-ttl-${dashboard.cache_ttl}`}
           />
         </ContentSection>
       )}

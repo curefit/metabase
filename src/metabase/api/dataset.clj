@@ -77,7 +77,8 @@
   "Execute a query and retrieve the results in the usual format. The query will not use the cache."
   [:as {{:keys [database] :as query} :body}]
   {database (s/maybe s/Int)}
-  (run-query-async (update-in query [:middleware :js-int-to-string?] (fnil identity true))))
+  (run-query-async (update-in (assoc-in query [:constraints] (qp.constraints/default-query-constraints))
+                              [:middleware :js-int-to-string?] (fnil identity true))))
 
 
 ;;; ----------------------------------- Downloading Query Results in Other Formats -----------------------------------

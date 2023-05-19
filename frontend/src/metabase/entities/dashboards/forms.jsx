@@ -1,7 +1,6 @@
 import React from "react";
 import { t } from "ttag";
 import MetabaseSettings from "metabase/lib/settings";
-import { PLUGIN_CACHING } from "metabase/plugins";
 
 import DashboardCopyModalShallowCheckboxLabel from "metabase/dashboard/components/DashboardCopyModal/DashboardCopyModalShallowCheckboxLabel";
 
@@ -70,14 +69,23 @@ export default {
     fields: () => {
       const fields = [...createForm()];
       if (
-        MetabaseSettings.get("enable-query-caching") &&
-        PLUGIN_CACHING.cacheTTLFormField
+        MetabaseSettings.get("enable-query-caching")
+        // PLUGIN_CACHING.cacheTTLFormField
       ) {
-        fields.push({
-          ...PLUGIN_CACHING.cacheTTLFormField,
-          type: "dashboardCacheTTL",
-          message: t`Cache all question results for`,
-        });
+        fields.push(
+          // {
+          //   ...PLUGIN_CACHING.cacheTTLFormField,
+          //   type: "dashboardCacheTTL",
+          //   message: t`Cache all question results for`,
+          // }
+          {
+            name: "cache_ttl",
+            title: t`Caching`,
+            type: "integer",
+            message: t`Cache all question results for`,
+            // validate: cache_ttl => (!cache_ttl ? t`cache_ttl is required` : null)
+          },
+        );
       }
       return fields;
     },

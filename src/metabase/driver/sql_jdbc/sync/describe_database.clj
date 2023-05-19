@@ -165,6 +165,8 @@
              ;; is. Not sure how much of a difference that makes since we're not running this inside a transaction,
              ;; but better safe than sorry
              (sql-jdbc.execute/set-best-transaction-level! driver conn)
+             (if (= driver (keyword "starburst"))
+               (.setClientInfo conn (doto (java.util.Properties.) (.putAll {"ClientTags" (str "")}))))
              (let [schema-filter-prop      (driver.u/find-schema-filters-prop driver)
                    has-schema-filter-prop? (some? schema-filter-prop)
                    default-active-tbl-fn   #(into #{} (sql-jdbc.sync.interface/active-tables driver conn nil nil))]

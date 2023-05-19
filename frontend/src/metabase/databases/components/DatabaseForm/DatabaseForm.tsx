@@ -6,8 +6,8 @@ import Form from "metabase/core/components/Form";
 import FormProvider from "metabase/core/components/FormProvider";
 import FormFooter from "metabase/core/components/FormFooter";
 import FormSubmitButton from "metabase/core/components/FormSubmitButton";
+import FormNumericInput from "metabase/core/components/FormNumericInput";
 import FormErrorMessage from "metabase/core/components/FormErrorMessage";
-import { PLUGIN_CACHING } from "metabase/plugins";
 import { DatabaseData, Engine } from "metabase-types/api";
 import { getDefaultEngineKey } from "../../utils/engine";
 import {
@@ -37,7 +37,7 @@ const DatabaseForm = ({
   initialValues: initialData,
   isHosted = false,
   isAdvanced = false,
-  isCachingEnabled = false,
+  isCachingEnabled = true,
   onSubmit,
   onCancel,
   onEngineChange,
@@ -59,6 +59,9 @@ const DatabaseForm = ({
 
   const handleSubmit = useCallback(
     (values: DatabaseData) => {
+      if (!values.cache_ttl) {
+        values.cache_ttl = null;
+      }
       return onSubmit?.(getSubmitValues(engine, values, isAdvanced));
     },
     [engine, isAdvanced, onSubmit],
@@ -138,7 +141,11 @@ const DatabaseFormBody = ({
       {fields.map(field => (
         <DatabaseDetailField key={field.name} field={field} />
       ))}
-      {isCachingEnabled && <PLUGIN_CACHING.DatabaseCacheTimeField />}
+      <FormNumericInput
+        name="cache_ttl"
+        placeholder={t`Cache TTL in Hours`}
+        title={t`Caching`}
+      />
       <DatabaseFormFooter isAdvanced={isAdvanced} onCancel={onCancel} />
     </Form>
   );
