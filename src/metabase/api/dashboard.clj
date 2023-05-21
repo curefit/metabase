@@ -190,7 +190,8 @@
   [card hash-vec->avg-time]
   (assoc card :query_average_duration (some (fn [query-hash]
                                               (hash-vec->avg-time (vec query-hash)))
-                                            (card->query-hashes card))))
+                                            (card->query-hashes card)))
+  (assoc card :warnings (vec (api.card/call-warnings-api (get card :id)))))
 
 (defn- add-query-average-duration-to-dashcards
   "Add `:query_average_duration` to the top-level Card and any Series in a sequence of `dashcards`."

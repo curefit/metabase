@@ -1,7 +1,8 @@
 import styled from "@emotion/styled";
 import { color } from "metabase/lib/colors";
-
+import { breakpointMaxSmall } from "metabase/styled-components/theme";
 import Button from "metabase/core/components/Button";
+import DashboardWarnings from "metabase/components/DashboardWarnings";
 
 export const DashboardHeaderActionDivider = styled.div`
   height: 1.25rem;
@@ -25,6 +26,12 @@ export const DashboardHeaderButton = styled(Button)`
 
   svg {
     vertical-align: middle;
+  }
+`;
+
+export const StyledWarningsLabel = styled(DashboardWarnings)`
+  ${breakpointMaxSmall} {
+    margin-top: 4px;
   }
 `;
 

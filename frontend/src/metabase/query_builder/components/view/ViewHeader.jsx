@@ -44,6 +44,7 @@ import {
   HeaderDivider,
   ViewHeaderActionPanel,
   ViewHeaderIconButtonContainer,
+  StyledQuestionWarnings,
 } from "./ViewHeader.styled";
 
 const viewTitleHeaderPropTypes = {
@@ -460,6 +461,15 @@ function ViewTitleHeaderRightSide(props) {
       {ConvertQueryButton.shouldRender(props) && (
         <ConvertQueryButton question={question} onOpenModal={onOpenModal} />
       )}
+      {question &&
+        question._card &&
+        question._card.warnings &&
+        question._card.warnings.length > 0 && (
+          <StyledQuestionWarnings
+            question={question}
+            onOpenModal={onOpenModal}
+          />
+        )}
       {hasExploreResultsLink && <ExploreResultsLink question={question} />}
       {hasRunButton && !isShowingNotebook && (
         <ViewHeaderIconButtonContainer>

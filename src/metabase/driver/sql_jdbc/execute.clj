@@ -502,8 +502,6 @@
    (with-open [conn          (connection-with-timezone driver (qp.store/database) (qp.timezone/report-timezone-id-if-supported))
                stmt          (statement-or-prepared-statement driver conn sql params (qp.context/canceled-chan context))
                ^ResultSet rs (try
-                               (println "==========are we here===========")
-                               (println (qp.util/get-client-tags outer-query))
                                (if (= driver (keyword "starburst"))
                                  (.setClientInfo conn (doto (java.util.Properties.) (.putAll {"ClientTags" (qp.util/get-client-tags outer-query)}))))
                                (execute-statement-or-prepared-statement! driver stmt max-rows params sql)

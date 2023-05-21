@@ -5,8 +5,10 @@
    [clojure.core.async :as a]
    [clojure.data :as data]
    [clojure.walk :as walk]
+   [clj-http.client :as client]
    [compojure.core :refer [DELETE GET POST PUT]]
    [medley.core :as m]
+   [metabase.config :as config]
    [metabase.api.common :as api]
    [metabase.api.common.validation :as validation]
    [metabase.api.dataset :as api.dataset]
@@ -55,6 +57,7 @@
    [schema.core :as s]
    [toucan.db :as db]
    [toucan.hydrate :refer [hydrate]]
+   [clj-time.core :as time]
    [toucan2.core :as t2])
   (:import
    (clojure.core.async.impl.channels ManyToManyChannel)
@@ -182,6 +185,36 @@
                      card)))
             cards))))
 
+(defn call-warnings-api [id]
+  (try
+    (let [response (client/post (str (config/config-str :mb-garuda-backend) "api/v1/metabase/warnings")
+                                {:body (json/generate-string {:cardIds [id]})
+                                 :content-type :json
+                                 :socket-timeout 2000
+                                 :conn-timeout 2000
+                                 :conn-request-timeout 2000})]
+      (json/parse-string (:body response)))
+    (catch java.net.SocketTimeoutException e
+      (println "Error: Request timed out")
+      nil)
+    (catch Throwable e
+      (println "Error occurred while calling API: " (.getMessage e))
+      nil)))
+
+(api/defendpoint GET "/:id/warnings"
+                 "Get latest Warnings for a Card."
+                 [id]
+                 (call-warnings-api id))
+
+(defn add-warnings-to-card
+  [{:keys [id] :as item}]
+  (try
+    (let [json-response (call-warnings-api id)]
+      (assoc item :warnings json-response))
+    (catch java.util.concurrent.TimeoutException e
+      (println "Call to warnings API timed out!")
+      (assoc item :warnings "Timeout"))))
+
 #_{:clj-kondo/ignore [:deprecated-var]}
 (api/defendpoint-schema GET "/:id"
   "Get `Card` with ID."
@@ -198,7 +231,8 @@
                  (cond-> ;; card
                    (:dataset raw-card) (hydrate :persisted))
                  api/read-check
-                 (last-edit/with-last-edit-info :card))]
+                 (last-edit/with-last-edit-info :card)
+                 (add-warnings-to-card))]
     (u/prog1 card
       (when-not (Boolean/parseBoolean ignore_view)
         (events/publish-event! :card-read (assoc <> :actor_id api/*current-user-id*))))))

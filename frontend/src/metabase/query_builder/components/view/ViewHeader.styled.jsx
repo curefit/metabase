@@ -10,6 +10,7 @@ import { color, alpha } from "metabase/lib/colors";
 import { breakpointMaxSmall, space } from "metabase/styled-components/theme";
 import ViewSection, { ViewSubHeading, ViewHeading } from "./ViewSection";
 import QuestionDataSource from "./QuestionDataSource";
+import QuestionWarnings from "./QuestionWarnings";
 
 export const ViewHeaderContainer = styled(ViewSection)`
   border-bottom: 1px solid ${color("border")};
@@ -210,5 +211,15 @@ export const ViewHeaderIconButtonContainer = styled.div`
       color: ${color("brand")};
       background-color: ${color("bg-medium")};
     }
+  }
+`;
+
+export const StyledQuestionWarnings = styled(QuestionWarnings)`
+  margin-bottom: 0.5rem;
+  margin-left: 0.5rem;
+  padding-right: 1rem;
+  ${breakpointMaxSmall} {
+    margin-left: 0;
+    padding-right: 0;
   }
 `;

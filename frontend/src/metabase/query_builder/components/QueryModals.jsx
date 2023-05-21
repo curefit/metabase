@@ -23,6 +23,7 @@ import QuestionEmbedWidget from "metabase/query_builder/containers/QuestionEmbed
 import { CreateAlertModalContent } from "metabase/query_builder/components/AlertModals";
 import { ImpossibleToCreateModelModal } from "metabase/query_builder/components/ImpossibleToCreateModelModal";
 import NewDatasetModal from "metabase/query_builder/components/NewDatasetModal";
+import QuestionWarningsModalComponent from "metabase/query_builder/components/view/QuestionWarningsModalComponent";
 import EntityCopyModal from "metabase/entities/containers/EntityCopyModal";
 import BulkFilterModal from "metabase/query_builder/components/filters/modals/BulkFilterModal";
 import NewEventModal from "metabase/timelines/questions/containers/NewEventModal";
@@ -277,6 +278,13 @@ class QueryModals extends React.Component {
       <Modal fit onClose={onCloseModal}>
         <ConvertQueryModal
           onUpdateQuestion={updateQuestion}
+          onClose={onCloseModal}
+        />
+      </Modal>
+    ) : modal === MODAL_TYPES.WARNINGS ? (
+      <Modal onClose={onCloseModal}>
+        <QuestionWarningsModalComponent
+          question={question}
           onClose={onCloseModal}
         />
       </Modal>

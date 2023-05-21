@@ -18,6 +18,7 @@ export const MODAL_TYPES = {
   MOVE_EVENT: "move-event",
   PREVIEW_QUERY: "preview-query",
   CONVERT_QUERY: "convert-query",
+  WARNINGS: "warnings-query",
 };
 
 export const SIDEBAR_SIZES = {

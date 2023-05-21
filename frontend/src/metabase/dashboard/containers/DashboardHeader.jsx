@@ -35,6 +35,7 @@ import { SIDEBAR_NAME } from "../constants";
 import {
   DashboardHeaderButton,
   DashboardHeaderActionDivider,
+  StyledWarningsLabel,
 } from "./DashboardHeader.styled";
 
 const mapStateToProps = (state, props) => {
@@ -216,6 +217,9 @@ class DashboardHeader extends Component {
     const buttons = [];
     const extraButtons = [];
 
+    console.log("======dashbaord headers==========");
+    console.log(dashboard);
+
     if (isFullscreen && parametersWidget) {
       buttons.push(parametersWidget);
     }
@@ -320,6 +324,19 @@ class DashboardHeader extends Component {
         link: `${location.pathname}/history`,
         event: "Dashboard;Revisions",
       });
+    }
+
+    if (!isFullscreen && !isEditing) {
+      dashboard &&
+        dashboard.ordered_cards &&
+        dashboard.ordered_cards.some(
+          card =>
+            Object.prototype.hasOwnProperty.call(card.card, "warnings") &&
+            Array.isArray(card.card.warnings) &&
+            card.card.warnings.length > 0 &&
+            card.card.warnings.some(warning => warning !== null),
+        ) &&
+        buttons.push(<StyledWarningsLabel item={dashboard} />);
     }
 
     if (!isFullscreen && !isEditing && canEdit) {

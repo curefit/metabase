@@ -45,7 +45,10 @@
    :mb-colorize-logs       (str (not is-windows?))                        ; since PowerShell and cmd.exe don't support ANSI color escape codes or emoji,
    :mb-emoji-in-logs       (str (not is-windows?))                        ; disable them by default when running on Windows. Otherwise they're enabled
    :mb-qp-cache-backend    "db"
-   :mb-data-lake-models-cache-location "s3://cf-analytics-datalake/metabase"})
+   :mb-data-lake-models-cache-location "s3://cf-analytics-datalake/metabase"
+   ;:mb-garuda-backend      "http://localhost:9092/"
+   :mb-garuda-backend      "http://dataplatform-garuda.production.cure.fit.internal/"
+   })
 
 ;; separate map for EE stuff so merge conflicts aren't annoying.
 (def ^:private ee-app-defaults
