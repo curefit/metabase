@@ -11,7 +11,14 @@ import SidebarItem from "metabase/components/SidebarItem";
 
 import S from "metabase/components/Sidebar.css";
 
-const FieldSidebar = ({ database, table, field, style, className }) => (
+const FieldSidebar = ({
+  database,
+  table,
+  field,
+  style,
+  className,
+  showSchemaInHeader,
+}) => (
   <div className={cx(S.sidebar, className)} style={style}>
     <ul>
       <div className={S.breadcrumbs}>
@@ -19,10 +26,27 @@ const FieldSidebar = ({ database, table, field, style, className }) => (
           className="py4 ml3"
           crumbs={[
             [database.name, `/reference/databases/${database.id}`],
-            [
-              table.name,
-              `/reference/databases/${database.id}/tables/${table.id}`,
-            ],
+            ...(showSchemaInHeader
+              ? [
+                  [
+                    table.schema_name,
+                    `/browse/${database.id}/schema/${table.schema_name}`,
+                  ],
+                ]
+              : []),
+            ...(showSchemaInHeader
+              ? [
+                  [
+                    table.name,
+                    `/reference/databases/${database.id}/schema/${table.schema_name}/tables/${table.id}`,
+                  ],
+                ]
+              : [
+                  [
+                    table.name,
+                    `/reference/databases/${database.id}/tables/${table.id}`,
+                  ],
+                ]),
             [field.name],
           ]}
           inSidebar={true}
@@ -31,8 +55,16 @@ const FieldSidebar = ({ database, table, field, style, className }) => (
       </div>
       <ol className="mx3">
         <SidebarItem
-          key={`/reference/databases/${database.id}/tables/${table.id}/fields/${field.id}`}
-          href={`/reference/databases/${database.id}/tables/${table.id}/fields/${field.id}`}
+          key={
+            showSchemaInHeader
+              ? `/reference/databases/${database.id}/schema/${table.schema_name}/tables/${table.id}/fields/${field.id}`
+              : `/reference/databases/${database.id}/tables/${table.id}/fields/${field.id}`
+          }
+          href={
+            showSchemaInHeader
+              ? `/reference/databases/${database.id}/schema/${table.schema_name}/tables/${table.id}/fields/${field.id}`
+              : `/reference/databases/${database.id}/tables/${table.id}/fields/${field.id}`
+          }
           icon="document"
           name={t`Details`}
         />
@@ -56,6 +88,7 @@ FieldSidebar.propTypes = {
   field: PropTypes.object,
   className: PropTypes.string,
   style: PropTypes.object,
+  showSchemaInHeader: PropTypes.bool,
 };
 
 export default React.memo(FieldSidebar);

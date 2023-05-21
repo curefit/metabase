@@ -217,9 +217,6 @@ class DashboardHeader extends Component {
     const buttons = [];
     const extraButtons = [];
 
-    console.log("======dashbaord headers==========");
-    console.log(dashboard);
-
     if (isFullscreen && parametersWidget) {
       buttons.push(parametersWidget);
     }

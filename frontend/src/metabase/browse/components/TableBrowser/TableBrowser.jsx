@@ -68,6 +68,8 @@ const TableBrowser = ({
                   database={database}
                   table={table}
                   dbId={dbId}
+                  schemaName={schemaName}
+                  showSchemaInHeader={showSchemaInHeader}
                   xraysEnabled={xraysEnabled}
                 />
               </TableLink>
@@ -85,12 +87,20 @@ const itemPropTypes = {
   database: PropTypes.object,
   table: PropTypes.object.isRequired,
   dbId: PropTypes.number,
+  schemaName: PropTypes.string,
+  showSchemaInHeader: PropTypes.bool,
   xraysEnabled: PropTypes.bool,
 };
 
-const TableBrowserItem = ({ database, table, dbId, xraysEnabled }) => {
+const TableBrowserItem = ({
+  table,
+  dbId,
+  schemaName,
+  showSchemaInHeader,
+  xraysEnabled,
+}) => {
   const isVirtual = isVirtualCardId(table.id);
-  const isLoading = isTableLoading(table, database);
+  const isLoading = isTableLoading(table, dbId);
 
   return (
     <EntityItem
@@ -107,6 +117,8 @@ const TableBrowserItem = ({ database, table, dbId, xraysEnabled }) => {
             tableId={table.id}
             dbId={dbId}
             xraysEnabled={xraysEnabled}
+            schemaName={schemaName}
+            showSchemaInHeader={showSchemaInHeader}
           />
         )
       }
@@ -120,9 +132,17 @@ const itemButtonsPropTypes = {
   tableId: PropTypes.number,
   dbId: PropTypes.number,
   xraysEnabled: PropTypes.bool,
+  schemaName: PropTypes.string,
+  showSchemaInHeader: PropTypes.bool,
 };
 
-const TableBrowserItemButtons = ({ tableId, dbId, xraysEnabled }) => {
+const TableBrowserItemButtons = ({
+  tableId,
+  dbId,
+  schemaName,
+  showSchemaInHeader,
+  xraysEnabled,
+}) => {
   return (
     <Fragment>
       {xraysEnabled && (
@@ -139,7 +159,12 @@ const TableBrowserItemButtons = ({ tableId, dbId, xraysEnabled }) => {
         </TableActionLink>
       )}
       <TableActionLink
-        to={`/reference/databases/${dbId}/tables/${tableId}`}
+        to={{
+          pathname: `/reference/databases/${dbId}${
+            showSchemaInHeader ? `/schema/${schemaName}` : ""
+          }/tables/${tableId}`,
+          state: { showSchemaInHeader: showSchemaInHeader },
+        }}
         data-metabase-event={`${ANALYTICS_CONTEXT};Table Item;Reference Click`}
       >
         <Icon

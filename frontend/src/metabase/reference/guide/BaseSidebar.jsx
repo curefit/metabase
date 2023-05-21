@@ -30,12 +30,12 @@ const BaseSidebar = ({ style, className }) => (
         icon="segment"
         name={t`Segments`}
       />
-      <SidebarItem
+      {/* <SidebarItem
         key="/reference/databases"
         href="/reference/databases"
         icon="database"
         name={t`Our data`}
-      />
+      /> */}
     </ol>
   </div>
 );

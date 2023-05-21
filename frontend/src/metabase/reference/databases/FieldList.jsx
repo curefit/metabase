@@ -70,6 +70,7 @@ const propTypes = {
   loading: PropTypes.bool,
   loadingError: PropTypes.object,
   onSubmit: PropTypes.func.isRequired,
+  location: PropTypes.string,
   "data-testid": PropTypes.string,
 };
 
@@ -167,7 +168,12 @@ const FieldList = props => {
                             <Field
                               field={entity}
                               foreignKeys={foreignKeys}
-                              url={`/reference/databases/${table.db_id}/tables/${table.id}/fields/${entity.id}`}
+                              url={
+                                props.location.pathname.split("/")[4] ===
+                                "schema"
+                                  ? `/reference/databases/${table.db_id}/schema/${table.schema_name}/tables/${table.id}/fields/${entity.id}`
+                                  : `/reference/databases/${table.db_id}/tables/${table.id}/fields/${entity.id}`
+                              }
                               icon={getIconForField(entity)}
                               isEditing={isEditing}
                               formField={getNestedFormField(entity.id)}

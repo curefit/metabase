@@ -47,9 +47,12 @@ export const fetchRealDatabases = (reload = false) => {
 
 export const FETCH_DATABASE_METADATA =
   Databases.actions.fetchDatabaseMetadata.toString();
-export const fetchDatabaseMetadata = (dbId, reload = false) => {
+export const fetchDatabaseMetadata = (dbId, schema_name, reload = false) => {
   deprecated("metabase/redux/metadata fetchDatabaseMetadata");
-  return Databases.actions.fetchDatabaseMetadata({ id: dbId }, { reload });
+  return Databases.actions.fetchDatabaseMetadata(
+    { id: dbId, schema_name: schema_name },
+    { reload },
+  );
 };
 
 export const updateDatabase = database => {

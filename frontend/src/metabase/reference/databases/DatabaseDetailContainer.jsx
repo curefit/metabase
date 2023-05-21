@@ -36,6 +36,7 @@ class DatabaseDetailContainer extends Component {
     await actions.wrappedFetchDatabaseMetadata(
       this.props,
       this.props.databaseId,
+      "abc#123",
     );
   }
 

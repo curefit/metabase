@@ -460,6 +460,36 @@
                                 (update :segments (partial filter mi/can-read?))
                                 (update :metrics  (partial filter mi/can-read?)))))))))
 
+(defn- db-metadata-schema [id include-hidden? include-editable-data-model? schema_name]
+  (let [db (-> (if include-editable-data-model?
+                 (api/check-404 (db/select-one Database :id id))
+                 (api/read-check Database id))
+               (assoc :tables (db/select Table :db_id id :schema schema_name))
+               (hydrate [:tables [:fields [:target :has_field_values] :has_field_values] :segments :metrics]))
+        db (if include-editable-data-model?
+             ;; We need to check data model perms after hydrating tables, since this will also filter out tables for
+             ;; which the *current-user* does not have data model perms
+             (check-db-data-model-perms db)
+             db)]
+    (-> db
+        (update :tables (if include-hidden?
+                          identity
+                          (fn [tables]
+                            (->> tables
+                                 (remove :visibility_type)
+                                 (map #(update % :fields filter-sensitive-fields))))))
+        (update :tables (fn [tables]
+                          (if-not include-editable-data-model?
+                            ;; If we're filtering by data model perms, table perm checks were already done by
+                            ;; check-db-data-model-perms
+                            (filter mi/can-read? tables)
+                            tables)))
+        (update :tables (fn [tables]
+                          (for [table tables]
+                            (-> table
+                                (update :segments (partial filter mi/can-read?))
+                                (update :metrics  (partial filter mi/can-read?)))))))))
+
 #_{:clj-kondo/ignore [:deprecated-var]}
 (api/defendpoint-schema GET "/:id/metadata"
   "Get metadata about a `Database`, including all of its `Tables` and `Fields`. Returns DB, fields, and field values.
@@ -469,12 +499,18 @@
   permissions, if Enterprise Edition code is available and a token with the advanced-permissions feature is present.
   In addition, if the user has no data access for the DB (aka block permissions), it will return only the DB name, ID
   and tables, with no additional metadata."
-  [id include_hidden include_editable_data_model]
+  [id include_hidden include_editable_data_model schema_name]
   {include_hidden              (s/maybe su/BooleanString)
-   include_editable_data_model (s/maybe su/BooleanString)}
-  (db-metadata id
-               (Boolean/parseBoolean include_hidden)
-               (Boolean/parseBoolean include_editable_data_model)))
+   include_editable_data_model (s/maybe su/BooleanString)
+   schema_name                 (s/maybe su/KeywordOrString)}
+                        (if schema_name
+                          (db-metadata-schema id
+                                              (Boolean/parseBoolean include_hidden)
+                                              (Boolean/parseBoolean include_editable_data_model)
+                                              (str schema_name))
+                          (db-metadata id
+                                       (Boolean/parseBoolean include_hidden)
+                                       (Boolean/parseBoolean include_editable_data_model))))
 
 
 ;;; --------------------------------- GET /api/database/:id/autocomplete_suggestions ---------------------------------
