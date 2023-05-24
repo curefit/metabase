@@ -6,6 +6,7 @@
    [metabase.models.persisted-info :as persisted-info]
    [metabase.public-settings :as public-settings]
    [metabase.util.log :as log]
+   [metabase.task.persist-refresh :as task.persist-refresh]
    [toucan.db :as db]))
 
 (def ^:private persisted-info-topics
@@ -34,7 +35,9 @@
                (public-settings/persisted-models-enabled)
                (get-in (db/select-one Database :id (:database_id card)) [:options :persist-models-enabled])
                (nil? (db/select-one-field :id PersistedInfo :card_id (:id card))))
-      (persisted-info/turn-on-model! (:actor_id card) card))
+      (let  [persisted-info (persisted-info/turn-on-model! (:actor_id card) card)]
+       (task.persist-refresh/schedule-refresh-for-individual! persisted-info)
+       persisted-info))
     (catch Throwable e
       (log/warn (format "Failed to process persisted-info event. %s" (:topic event)) e))))
 

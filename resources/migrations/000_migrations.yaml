@@ -13937,17 +13937,17 @@ databaseChangeLog:
                   name: executor_id
             indexName: idx_query_execution_executor_id
 
-  - changeSet:
-      id: v46.00-043
-      author: tsmacdonald
-      comment: Added 0.46.0 -- index query_execution.context
-      changes:
-        - createIndex:
-            tableName: query_execution
-            columns:
-              - column:
-                  name: context
-            indexName: idx_query_execution_context
+#  - changeSet:
+#      id: v46.00-043
+#      author: tsmacdonald
+#      comment: Added 0.46.0 -- index query_execution.context
+#      changes:
+#        - createIndex:
+#            tableName: query_execution
+#            columns:
+#              - column:
+#                  name: context
+#            indexName: idx_query_execution_context
 
   - changeSet:
       id: v46.00-045

@@ -31,7 +31,6 @@
   (let [driver      (or driver/*driver* (driver.u/database->driver database_id))]
     ;; select * because we don't actually know the name of the fields when in the actual query. See #28902
     (let [engine (db/select-one-field :engine Database :id database_id)]
-      (println "---in persist----")
     (format "select * from %s.%s"
             (sql.u/quote-name
              driver

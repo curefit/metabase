@@ -19,8 +19,6 @@
   (schema-name {:id 234} \"143dd8ce-e116-4c7f-8d6d-32e99eaefbbc\") ->  \"metabase_cache_1e483_1\""
   [{:keys [engine] :as _database} site-uuid-string]
   (let [instance-string (apply str (map first (str/split site-uuid-string #"-")))]
-    (println "--schema name----")
-    (println (format "dwh_metabase_%s" (name engine)))
     (format "dwh_metabase_%s" (name engine))))
 
 (defmulti format-name
