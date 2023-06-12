@@ -184,9 +184,12 @@ export const getMetadata = createSelector(
     hydrate(meta.fields, "table", f => meta.table(f.table_id));
     hydrate(meta.fields, "target", f => meta.field(f.fk_target_field_id));
     hydrate(meta.fields, "name_field", f => {
-      if (f.description === "partition key") {
-        f.display_name = f.display_name.concat(" (", f.description, ")");
-        f.name = f.name.concat(" (", f.description, ")");
+      if (
+        f.description &&
+        f.description.toLowerCase().includes("partition key")
+      ) {
+        f.display_name = f.display_name.concat(" (partition key)");
+        f.name = f.name.concat(" (partition key)");
         console.log(f);
       }
       if (f.name_field != null) {

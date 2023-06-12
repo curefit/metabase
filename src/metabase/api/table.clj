@@ -464,6 +464,7 @@
       ;; async so as not to block the UI
       (sync.concurrent/submit-task
        (fn []
+         (metabase.sync.sync-metadata/sync-table-metadata! table)
          (sync.field-values/update-field-values-for-table! table))))
     {:status :success}))
 

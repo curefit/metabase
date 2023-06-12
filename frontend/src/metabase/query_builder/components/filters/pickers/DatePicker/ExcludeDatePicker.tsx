@@ -122,7 +122,7 @@ export default function ExcludeDatePicker({
               selected={operator === "not-null"}
               primaryColor={primaryColor}
               onClick={() => {
-                onCommit(getNotNullDateFilter(filter));
+                onCommit(getIsNullDateFilter(filter));
               }}
             >
               {t`Is empty`}
@@ -131,7 +131,7 @@ export default function ExcludeDatePicker({
               selected={operator === "is-null"}
               primaryColor={primaryColor}
               onClick={() => {
-                onCommit(getIsNullDateFilter(filter));
+                onCommit(getNotNullDateFilter(filter));
               }}
             >
               {t`Is not empty`}
