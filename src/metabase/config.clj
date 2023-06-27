@@ -46,7 +46,7 @@
    :mb-emoji-in-logs       (str (not is-windows?))                        ; disable them by default when running on Windows. Otherwise they're enabled
    :mb-qp-cache-backend    "db"
    :mb-data-lake-models-cache-location "s3://cf-analytics-datalake/metabase"
-   ;:mb-garuda-backend      "http://localhost:9092/"
+   ;:mb-garuda-backend      "http://localhost:9096/"
    :mb-garuda-backend      "http://dataplatform-garuda.production.cure.fit.internal/"
    })
 

@@ -1159,6 +1159,44 @@ class QuestionInner {
     }
   }
 
+  /**
+   * Runs the query Explainer.
+   */
+  async queryExplain(
+    cardId,
+    query,
+    result_metadata,
+    database_id,
+  ): Promise<object> {
+    return await CardApi.queryExplainer({
+      cardId: cardId,
+      card_id: cardId,
+      query: query,
+      result_metadata: result_metadata,
+      database_id: database_id,
+    });
+  }
+
+  /**
+   * Runs the query Optimiser.
+   */
+  async queryOptimise(
+    cardId,
+    query,
+    result_metadata,
+    database_id,
+    warnings,
+  ): Promise<object> {
+    return await CardApi.queryOptimiser({
+      cardId: cardId,
+      card_id: cardId,
+      query: query,
+      result_metadata: result_metadata,
+      database_id: database_id,
+      warnings: warnings,
+    });
+  }
+
   setParameter(id: ParameterId, parameter: ParameterObject) {
     const newParameters = this.parameters().map(oldParameter =>
       oldParameter.id === id ? parameter : oldParameter,

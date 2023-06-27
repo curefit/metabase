@@ -6,6 +6,7 @@
    [clojure.data :as data]
    [clojure.walk :as walk]
    [clj-http.client :as client]
+   [clojure.string :as str]
    [compojure.core :refer [DELETE GET POST PUT]]
    [medley.core :as m]
    [metabase.config :as config]
@@ -205,6 +206,49 @@
                  "Get latest Warnings for a Card."
                  [id]
                  (call-warnings-api id))
+
+(api/defendpoint POST "/explain/:id"
+                 "Explain SQL for a Card."
+                 [:as {{:keys [card_id query result_metadata database_id], :as body} :body}]
+                 (try
+                   (let [result (db/select-one Database :id database_id)
+                         response (client/post (str (config/config-str :mb-garuda-backend) "api/v1/explain/" card_id)
+                                               {:body (json/generate-string {:card_id card_id :query query
+                                                                             :result_metadata result_metadata
+                                                                             :engine_name (str/upper-case (if (= (name (:engine result)) "starburst") "trino" (:engine result)))})
+                                                :content-type :json
+                                                :socket-timeout 20000
+                                                :conn-timeout 20000
+                                                :conn-request-timeout 20000})]
+                     (json/parse-string (:body response)))
+                   (catch java.net.SocketTimeoutException e
+                          (println "Error: Request timed out")
+                          nil)
+                   (catch Throwable e
+                     (println "Error occurred while calling API: " (.getMessage e))
+                     nil)))
+
+(api/defendpoint POST "/optimise/:id"
+                 "Optimise SQL for a Card."
+                 [:as {{:keys [card_id query result_metadata database_id warnings], :as body} :body}]
+                 (try
+                   (let [result (db/select-one Database :id database_id)
+                         response (client/post (str (config/config-str :mb-garuda-backend) "api/v1/optimise/" card_id)
+                                               {:body (json/generate-string {:card_id card_id :query query
+                                                                             :result_metadata result_metadata
+                                                                             :warnings warnings
+                                                                             :engine_name (str/upper-case (if (= (name (:engine result)) "starburst") "trino" (:engine result)))})
+                                                :content-type :json
+                                                :socket-timeout 200000
+                                                :conn-timeout 200000
+                                                :conn-request-timeout 200000})]
+                     (json/parse-string (:body response)))
+                   (catch java.net.SocketTimeoutException e
+                     (println "Error: Request timed out")
+                     nil)
+                   (catch Throwable e
+                     (println "Error occurred while calling API: " (.getMessage e))
+                     nil)))
 
 (defn add-warnings-to-card
   [{:keys [id] :as item}]

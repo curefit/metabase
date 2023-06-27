@@ -110,6 +110,8 @@ export const CardApi = {
   adHocRelated: POST("/api/card/related"),
   parameterValues: GET("/api/card/:cardId/params/:paramId/values"),
   parameterSearch: GET("/api/card/:cardId/params/:paramId/search/:query"),
+  queryExplainer: POST("/api/card/explain/:cardId"),
+  queryOptimiser: POST("/api/card/optimise/:cardId"),
 };
 
 export const DashboardApi = {

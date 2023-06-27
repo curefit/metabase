@@ -19,6 +19,7 @@ export const MODAL_TYPES = {
   PREVIEW_QUERY: "preview-query",
   CONVERT_QUERY: "convert-query",
   WARNINGS: "warnings-query",
+  SQL_ASSISTANT: "sql-assistant",
 };
 
 export const SIDEBAR_SIZES = {
