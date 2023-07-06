@@ -421,7 +421,7 @@
   "Retrieve prompt templates from the metabot-get-prompt-templates-url."
   []
   (log/info "Refreshing metabot prompt templates.")
-  (let [file-path :mb-prompt-file-path
+  (let [file-path (config/config-str :mb-prompt-file-path)
         all-templates (-> file-path
                           slurp
                           (json/parse-string keyword))]
