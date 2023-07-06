@@ -63,6 +63,8 @@
                  :user_prompt question
                  :prompt_task :infer_sql}
         dataset (infer-sql-or-throw context question)]
+    (println "================final prompt==========")
+    (println context)
     (add-viz-to-dataset context dataset)))
 
 #_{:clj-kondo/ignore [:deprecated-var]}

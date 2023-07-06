@@ -4,6 +4,7 @@
    [metabase.events :as events]
    [metabase.models :refer [Database PersistedInfo]]
    [metabase.models.persisted-info :as persisted-info]
+   [metabase.task.persist-refresh :as task.persist-refresh]
    [metabase.public-settings :as public-settings]
    [metabase.util.log :as log]
    [toucan2.core :as t2]))
@@ -33,7 +34,9 @@
     (when (and (:dataset card)
                (public-settings/persisted-models-enabled)
                (get-in (t2/select-one Database :id (:database_id card)) [:options :persist-models-enabled])
-               (nil? (t2/select-one-fn :id PersistedInfo :card_id (:id card))))
+               (let  [persisted-info (persisted-info/turn-on-model! (:actor_id card) card)]
+                 (task.persist-refresh/schedule-refresh-for-individual! persisted-info)
+                 persisted-info))
       (persisted-info/turn-on-model! (:actor_id card) card))
     (catch Throwable e
       (log/warn (format "Failed to process persisted-info event. %s" (:topic event)) e))))

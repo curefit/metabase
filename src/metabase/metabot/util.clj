@@ -6,6 +6,7 @@
    [clojure.core.memoize :as memoize]
    [clojure.string :as str]
    [honey.sql :as sql]
+   [metabase.config :as config]
    [metabase.db.query :as mdb.query]
    [metabase.mbql.util :as mbql.u]
    [metabase.metabot.client :as metabot-client]
@@ -219,9 +220,9 @@
 (defn- field->pseudo-enums
   "For a field, create a potential enumerated type string.
   Returns nil if there are no field values or the cardinality is too high."
-  ([{table-name :name} {field-name :name field-id :id :keys [base_type]} enum-cardinality-threshold]
+  ([{table-name :name} {field-name :name field-id :id :keys [semantic_type]} enum-cardinality-threshold]
    (when-let [values (and
-                      (not= :type/Boolean base_type)
+                      (= :type/Category semantic_type)
                       (t2/select-one-fn :values FieldValues :field_id field-id))]
      (when (<= (count values) enum-cardinality-threshold)
        (let [ddl-str (format "create type %s_%s_t as enum %s;"
@@ -250,6 +251,7 @@
                                   :fk_target_field_id
                                   :id
                                   :name
+                                  :description
                                   :semantic_type]
                         :table_id table-id)
          enums        (reduce
@@ -260,11 +262,14 @@
                        {}
                        fields)
          columns      (vec
-                       (for [{column-name :name :keys [database_required database_type]} fields]
+                       (for [{column-name :name :keys [database_required database_type description]} fields]
                          (cond-> [column-name
                                   (if (enums column-name)
                                     (format "%s_%s_t" table-name column-name)
-                                    database_type)]
+                                    database_type)
+                                  (if (not= description nil)
+                                    (format "column description: %s" description)
+                                    (format "%s" ""))]
                            database_required
                            (conj [:not nil]))))
          primary-keys [[(into [:primary-key]
@@ -416,7 +421,8 @@
   "Retrieve prompt templates from the metabot-get-prompt-templates-url."
   []
   (log/info "Refreshing metabot prompt templates.")
-  (let [all-templates (-> (metabot-settings/metabot-get-prompt-templates-url)
+  (let [file-path :mb-prompt-file-path
+        all-templates (-> file-path
                           slurp
                           (json/parse-string keyword))]
     (-> (group-by (comp keyword :prompt_template) all-templates)
@@ -440,12 +446,15 @@
    of the context interpolating all values from the template. The returned
    value is the template object with the prompt contained in the ':prompt' key."
   [{:keys [prompt_task] :as context}]
+  (println (get-in (*prompt-templates*) [prompt_task :latest]))
   (if-some [{:keys [messages] :as template} (get-in (*prompt-templates*) [prompt_task :latest])]
     (let [prompt (assoc template
                         :message_templates messages
                         :messages (prompt-template->messages template context))]
       (let [nchars (count (mapcat :content messages))]
         (log/debugf "Prompt running with %s chars (~%s tokens)." nchars (quot nchars 4)))
+      (println "-----------final prompt---------------")
+      (println prompt)
       prompt)
     (throw
      (ex-info

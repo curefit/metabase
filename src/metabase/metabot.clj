@@ -37,6 +37,8 @@
   (if (metabot-settings/is-metabot-enabled)
     (let [{:keys [prompt_template version] :as prompt} (metabot-util/create-prompt context)
           {:keys [database_id inner_query]} model]
+      (println "==============prompt_template====================")
+      (println prompt)
       (if-some [bot-sql (metabot-util/find-result
                          metabot-util/extract-sql
                          (metabot-client/invoke-metabot prompt))]
@@ -115,12 +117,14 @@
     :keys             [user_prompt prompt_template_versions] :as context}]
   (log/infof "Metabot is inferring sql for database '%s' with prompt '%s'." database-id user_prompt)
   (if (metabot-settings/is-metabot-enabled)
-    (let [prompt-objects (->> (t2/select [Table :name :schema :id] :db_id database-id)
+    (let [prompt-objects (->> (t2/select [Table :name :schema :id] :db_id database-id :active true :visibility_type nil)
                               (map metabot-util/memoized-create-table-embedding)
                               (filter identity))
           ddl            (metabot-util/generate-prompt prompt-objects user_prompt)
           context        (assoc-in context [:database :create_database_ddl] ddl)
           {:keys [prompt_template version] :as prompt} (metabot-util/create-prompt context)]
+      (println "============generate prompt==============")
+      (println ddl)
       (if-some [sql (metabot-util/find-result
                      metabot-util/extract-sql
                      (metabot-client/invoke-metabot prompt))]
