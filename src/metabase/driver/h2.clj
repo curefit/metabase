@@ -1,31 +1,31 @@
 (ns metabase.driver.h2
   (:require
-   [clojure.math.combinatorics :as math.combo]
-   [clojure.string :as str]
-   [java-time :as t]
-   [metabase.db.jdbc-protocols :as mdb.jdbc-protocols]
-   [metabase.db.spec :as mdb.spec]
-   [metabase.driver :as driver]
-   [metabase.driver.common :as driver.common]
-   [metabase.driver.h2.actions :as h2.actions]
-   [metabase.driver.sql-jdbc.connection :as sql-jdbc.conn]
-   [metabase.driver.sql-jdbc.execute :as sql-jdbc.execute]
-   [metabase.driver.sql-jdbc.sync :as sql-jdbc.sync]
-   [metabase.driver.sql.query-processor :as sql.qp]
-   [metabase.plugins.classloader :as classloader]
-   [metabase.query-processor.error-type :as qp.error-type]
-   [metabase.query-processor.store :as qp.store]
-   [metabase.util :as u]
-   [metabase.util.honey-sql-2 :as h2x]
-   [metabase.util.i18n :refer [deferred-tru tru]]
-   [metabase.util.log :as log]
-   [metabase.util.malli :as mu]
-   [metabase.util.ssh :as ssh])
+    [clojure.math.combinatorics :as math.combo]
+    [clojure.string :as str]
+    [java-time :as t]
+    [metabase.db.jdbc-protocols :as mdb.jdbc-protocols]
+    [metabase.db.spec :as mdb.spec]
+    [metabase.driver :as driver]
+    [metabase.driver.common :as driver.common]
+    [metabase.driver.h2.actions :as h2.actions]
+    [metabase.driver.sql-jdbc.connection :as sql-jdbc.conn]
+    [metabase.driver.sql-jdbc.execute :as sql-jdbc.execute]
+    [metabase.driver.sql-jdbc.sync :as sql-jdbc.sync]
+    [metabase.driver.sql.query-processor :as sql.qp]
+    [metabase.plugins.classloader :as classloader]
+    [metabase.query-processor.error-type :as qp.error-type]
+    [metabase.query-processor.store :as qp.store]
+    [metabase.util :as u]
+    [metabase.util.honey-sql-2 :as h2x]
+    [metabase.util.i18n :refer [deferred-tru tru]]
+    [metabase.util.log :as log]
+    [metabase.util.malli :as mu]
+    [metabase.util.ssh :as ssh])
   (:import
-   (java.sql Clob ResultSet ResultSetMetaData)
-   (java.time OffsetTime)
-   (org.h2.command CommandInterface Parser)
-   (org.h2.engine SessionLocal)))
+    (java.sql Clob ResultSet ResultSetMetaData)
+    (java.time OffsetTime)
+    (org.h2.command CommandInterface Parser)
+    (org.h2.engine SessionLocal)))
 
 (set! *warn-on-reflection* true)
 
@@ -37,6 +37,19 @@
 (defmethod sql.qp/honey-sql-version :h2
   [_driver]
   2)
+
+(defn- get-field
+  "Returns value of private field. This function is used to bypass field protection to instantiate
+   a low-level H2 Parser object in order to detect DDL statements in queries."
+  ([obj field]
+   (.get (doto (.getDeclaredField (class obj) field)
+           (.setAccessible true))
+         obj))
+  ([obj field or-else]
+   (try (get-field obj field)
+        (catch java.lang.NoSuchFieldException _e
+          ;; when there are no fields: return or-else
+          or-else))))
 
 ;;; +----------------------------------------------------------------------------------------------------------------+
 ;;; |                                             metabase.driver impls                                              |
@@ -61,16 +74,51 @@
 (defmethod driver/connection-properties :h2
   [_]
   (->>
-   [{:name         "db"
-     :display-name (tru "Connection String")
-     :helper-text (deferred-tru "The local path relative to where Metabase is running from. Your string should not include the .mv.db extension.")
-     :placeholder  (str "file:/" (deferred-tru "Users/camsaul/bird_sightings/toucans"))
-     :required     true}
-    driver.common/cloud-ip-address-info
-    driver.common/advanced-options-start
-    driver.common/default-advanced-options]
-   (map u/one-or-many)
-   (apply concat)))
+    [{:name         "db"
+      :display-name (tru "Connection String")
+      :helper-text (deferred-tru "The local path relative to where Metabase is running from. Your string should not include the .mv.db extension.")
+      :placeholder  (str "file:/" (deferred-tru "Users/camsaul/bird_sightings/toucans"))
+      :required     true}
+     driver.common/cloud-ip-address-info
+     driver.common/advanced-options-start
+     driver.common/default-advanced-options]
+    (map u/one-or-many)
+    (apply concat)))
+
+(defn- malicious-property-value
+  "Checks an h2 connection string for connection properties that could be malicious. Markers of this include semi-colons
+  which allow for sql injection in org.h2.engine.Engine/openSession. The others are markers for languages like
+  javascript and ruby that we want to suppress."
+  [s]
+  ;; list of strings it looks for to compile scripts:
+  ;; https://github.com/h2database/h2database/blob/master/h2/src/main/org/h2/util/SourceCompiler.java#L178-L187 we
+  ;; can't use the static methods themselves since they expect to check the beginning of the string
+  (let [bad-markers [";"
+                     "//javascript"
+                     "#ruby"
+                     "//groovy"
+                     "@groovy"]
+        pred        (apply some-fn (map (fn [marker] (fn [s] (str/includes? s marker)))
+                                        bad-markers))]
+    (pred s)))
+
+(defmethod driver/can-connect? :h2
+  [driver {:keys [db] :as details}]
+  (when (string? db)
+    (let [connection-str  (cond-> db
+                                  (not (str/includes? db "h2:")) (str/replace-first #"^" "h2:")
+                                  (not (str/includes? db "jdbc:")) (str/replace-first #"^" "jdbc:"))
+          connection-info (org.h2.engine.ConnectionInfo. connection-str nil nil nil)
+          properties      (get-field connection-info "prop")
+          bad-props       (into {} (keep (fn [[k v]] (when (malicious-property-value v) [k v])))
+                                properties)]
+      (when (seq bad-props)
+        (throw (ex-info "Malicious keys detected" {:keys (keys bad-props)})))
+      ;; keys are uppercased by h2 when parsed:
+      ;; https://github.com/h2database/h2database/blob/master/h2/src/main/org/h2/engine/ConnectionInfo.java#L298
+      (when (contains? properties "INIT")
+        (throw (ex-info "INIT not allowed" {:keys ["INIT"]})))))
+  (sql-jdbc.conn/can-connect? driver details))
 
 (defmethod driver/db-start-of-week :h2
   [_]
@@ -97,30 +145,18 @@
 
 (defn- check-native-query-not-using-default-user [{query-type :type, :as query}]
   (u/prog1 query
-    ;; For :native queries check to make sure the DB in question has a (non-default) NAME property specified in the
-    ;; connection string. We don't allow SQL execution on H2 databases for the default admin account for security
-    ;; reasons
-    (when (= (keyword query-type) :native)
-      (let [{:keys [details]} (qp.store/database)
-            user              (db-details->user details)]
-        (when (or (str/blank? user)
-                  (= user "sa"))        ; "sa" is the default USER
-          (throw
-           (ex-info (tru "Running SQL queries against H2 databases using the default (admin) database user is forbidden.")
-                    {:type qp.error-type/db})))))))
+           ;; For :native queries check to make sure the DB in question has a (non-default) NAME property specified in the
+           ;; connection string. We don't allow SQL execution on H2 databases for the default admin account for security
+           ;; reasons
+           (when (= (keyword query-type) :native)
+             (let [{:keys [details]} (qp.store/database)
+                   user              (db-details->user details)]
+               (when (or (str/blank? user)
+                         (= user "sa"))        ; "sa" is the default USER
+                 (throw
+                   (ex-info (tru "Running SQL queries against H2 databases using the default (admin) database user is forbidden.")
+                            {:type qp.error-type/db})))))))
 
-(defn- get-field
-  "Returns value of private field. This function is used to bypass field protection to instantiate
-   a low-level H2 Parser object in order to detect DDL statements in queries."
-  ([obj field]
-   (.get (doto (.getDeclaredField (class obj) field)
-           (.setAccessible true))
-         obj))
-  ([obj field or-else]
-   (try (get-field obj field)
-        (catch java.lang.NoSuchFieldException _e
-          ;; when there are no fields: return or-else
-          or-else))))
 
 (defn- make-h2-parser
   "Returns an H2 Parser object for the given (H2) database ID"
@@ -137,48 +173,48 @@
                                       [:map
                                        [:command-types [:vector pos-int?]]
                                        [:remaining-sql [:maybe :string]]]]
-  "Takes an h2 db id, and a query, returns the command-types from `query` and any remaining sql.
-   More info on command types here:
-   https://github.com/h2database/h2database/blob/master/h2/src/main/org/h2/command/CommandInterface.java
+         "Takes an h2 db id, and a query, returns the command-types from `query` and any remaining sql.
+          More info on command types here:
+          https://github.com/h2database/h2database/blob/master/h2/src/main/org/h2/command/CommandInterface.java
 
-  If the h2 parser cannot be built, returns `nil`.
+         If the h2 parser cannot be built, returns `nil`.
 
-  - Each `command-type` corresponds to a value in org.h2.command.CommandInterface, and match the commands from `query` in order.
-  - `remaining-sql` is a nillable sql string that is unable to be classified without running preceding queries first.
-    Usually if `remaining-sql` exists we will deny the query."
-  [database query]
-  (when-let [h2-parser (make-h2-parser database)]
-    (try
-      (let [command            (.prepareCommand h2-parser query)
-            first-command-type (.getCommandType command)
-            command-types      (cond-> [first-command-type]
-                                 (not (instance? org.h2.command.CommandContainer command))
-                                 (into
-                                  (map #(.getType ^org.h2.command.Prepared %))
-                                  ;; when there are no fields: return no commands
-                                  (get-field command "commands" [])))]
-        {:command-types command-types
-         ;; when there is no remaining sql: return nil for remaining-sql
-         :remaining-sql (get-field command "remaining" nil)})
-      ;; only valid queries can be classified.
-      (catch org.h2.message.DbException _
-        {:command-types [] :remaining-sql nil}))))
+         - Each `command-type` corresponds to a value in org.h2.command.CommandInterface, and match the commands from `query` in order.
+         - `remaining-sql` is a nillable sql string that is unable to be classified without running preceding queries first.
+           Usually if `remaining-sql` exists we will deny the query."
+         [database query]
+         (when-let [h2-parser (make-h2-parser database)]
+           (try
+             (let [command            (.prepareCommand h2-parser query)
+                   first-command-type (.getCommandType command)
+                   command-types      (cond-> [first-command-type]
+                                              (not (instance? org.h2.command.CommandContainer command))
+                                              (into
+                                                (map #(.getType ^org.h2.command.Prepared %))
+                                                ;; when there are no fields: return no commands
+                                                (get-field command "commands" [])))]
+               {:command-types command-types
+                ;; when there is no remaining sql: return nil for remaining-sql
+                :remaining-sql (get-field command "remaining" nil)})
+             ;; only valid queries can be classified.
+             (catch org.h2.message.DbException _
+               {:command-types [] :remaining-sql nil}))))
 
 (defn- every-command-allowed-for-actions? [{:keys [command-types remaining-sql]}]
   (let [cmd-type-nums command-types]
     (boolean
-     ;; Command types are organized with all DDL commands listed first, so all ddl commands are before ALTER_SEQUENCE.
-     ;; see https://github.com/h2database/h2database/blob/master/h2/src/main/org/h2/command/CommandInterface.java#L297
-     (and (every? #{CommandInterface/INSERT
-                    CommandInterface/MERGE
-                    CommandInterface/TRUNCATE_TABLE
-                    CommandInterface/UPDATE
-                    CommandInterface/DELETE
-                    ;; Read-only commands might not make sense for actions, but they are allowed
-                    CommandInterface/SELECT ; includes SHOW, TABLE, VALUES
-                    CommandInterface/EXPLAIN
-                    CommandInterface/CALL} cmd-type-nums)
-          (nil? remaining-sql)))))
+      ;; Command types are organized with all DDL commands listed first, so all ddl commands are before ALTER_SEQUENCE.
+      ;; see https://github.com/h2database/h2database/blob/master/h2/src/main/org/h2/command/CommandInterface.java#L297
+      (and (every? #{CommandInterface/INSERT
+                     CommandInterface/MERGE
+                     CommandInterface/TRUNCATE_TABLE
+                     CommandInterface/UPDATE
+                     CommandInterface/DELETE
+                     ;; Read-only commands might not make sense for actions, but they are allowed
+                     CommandInterface/SELECT ; includes SHOW, TABLE, VALUES
+                     CommandInterface/EXPLAIN
+                     CommandInterface/CALL} cmd-type-nums)
+           (nil? remaining-sql)))))
 
 (defn- check-action-commands-allowed [{:keys [database] {:keys [query]} :native}]
   (when query
@@ -190,10 +226,10 @@
 (defn- read-only-statements? [{:keys [command-types remaining-sql]}]
   (let [cmd-type-nums command-types]
     (boolean
-     (and (every? #{CommandInterface/SELECT ; includes SHOW, TABLE, VALUES
-                    CommandInterface/EXPLAIN
-                    CommandInterface/CALL} cmd-type-nums)
-          (nil? remaining-sql)))))
+      (and (every? #{CommandInterface/SELECT ; includes SHOW, TABLE, VALUES
+                     CommandInterface/EXPLAIN
+                     CommandInterface/CALL} cmd-type-nums)
+           (nil? remaining-sql)))))
 
 (defn- check-read-only-statements [{:keys [database] {:keys [query]} :native}]
   (when query
@@ -443,12 +479,12 @@
   {:pre [(string? connection-string)]}
   (let [[file options] (connection-string->file+options connection-string)]
     (file+options->connection-string file (merge
-                                           (->> options
-                                                ;; Remove INIT=... from options for security reasons (Metaboat #165)
-                                                ;; http://h2database.com/html/features.html#execute_sql_on_connection
-                                                (remove (fn [[k _]] (= (u/lower-case-en k) "init")))
-                                                (into {}))
-                                           {"IFEXISTS" "TRUE"}))))
+                                            (->> options
+                                                 ;; Remove INIT=... from options for security reasons (Metaboat #165)
+                                                 ;; http://h2database.com/html/features.html#execute_sql_on_connection
+                                                 (remove (fn [[k _]] (= (u/lower-case-en k) "init")))
+                                                 (into {}))
+                                            {"IFEXISTS" "TRUE"}))))
 
 (defmethod sql-jdbc.conn/connection-details->spec :h2
   [_ details]
