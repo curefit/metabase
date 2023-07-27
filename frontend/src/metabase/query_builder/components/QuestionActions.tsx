@@ -1,7 +1,9 @@
+/* eslint no-unused-vars: "off" */
 import React, { useCallback } from "react";
 import { t } from "ttag";
 import { connect } from "react-redux";
 
+import * as Urls from "metabase/lib/urls";
 import Button from "metabase/core/components/Button";
 import Tooltip from "metabase/core/components/Tooltip";
 import EntityMenu from "metabase/components/EntityMenu";
@@ -17,6 +19,9 @@ import { State } from "metabase-types/store";
 import { color } from "metabase/lib/colors";
 
 import BookmarkToggle from "metabase/core/components/BookmarkToggle";
+import { getSetting } from "metabase/selectors/settings";
+import { canUseMetabotOnDatabase } from "metabase/metabot/utils";
+import { useSelector } from "metabase/lib/redux";
 import Question from "metabase-lib/Question";
 
 import {
@@ -76,6 +81,9 @@ const QuestionActions = ({
   isModerator,
   softReloadCard,
 }: Props) => {
+  const isMetabotEnabled = useSelector(state =>
+    getSetting(state, "is-metabot-enabled"),
+  );
   const bookmarkTooltip = isBookmarked ? t`Remove from bookmarks` : t`Bookmark`;
 
   const infoButtonColor = isShowingQuestionInfoSidebar
@@ -85,6 +93,7 @@ const QuestionActions = ({
   const isDataset = question.isDataset();
   const canWrite = question.canWrite();
   const isSaved = question.isSaved();
+  const database = question.database();
 
   const canPersistDataset =
     PLUGIN_MODEL_PERSISTENCE.isModelLevelPersistenceEnabled() &&
@@ -113,6 +122,19 @@ const QuestionActions = ({
   }, [onOpenModal, question]);
 
   const extraButtons = [];
+
+  if (
+    isMetabotEnabled &&
+    isDataset &&
+    database &&
+    canUseMetabotOnDatabase(database)
+  ) {
+    extraButtons.push({
+      title: t`Ask Metabot`,
+      icon: "insight",
+      link: Urls.modelMetabot(question.id()),
+    });
+  }
 
   extraButtons.push(
     PLUGIN_MODERATION.getMenuItems(question, isModerator, softReloadCard),
@@ -229,4 +251,5 @@ const QuestionActions = ({
   );
 };
 
+// eslint-disable-next-line import/no-default-export -- deprecated usage
 export default connect(mapStateToProps, mapDispatchToProps)(QuestionActions);

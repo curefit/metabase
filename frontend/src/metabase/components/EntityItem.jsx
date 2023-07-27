@@ -1,14 +1,20 @@
+/* eslint-disable */
 /* eslint-disable react/prop-types */
 import React, { useMemo } from "react";
 import { t } from "ttag";
 import cx from "classnames";
 
+import * as Urls from "metabase/lib/urls";
 import EntityMenu from "metabase/components/EntityMenu";
 import Swapper from "metabase/core/components/Swapper";
 import CheckBox from "metabase/core/components/CheckBox";
 import Ellipsified from "metabase/core/components/Ellipsified";
 import Icon from "metabase/components/Icon";
-import { isFullyParametrized, isItemPinned } from "metabase/collections/utils";
+import {
+  isFullyParametrized,
+  isItemPinned,
+  isItemModel,
+} from "metabase/collections/utils";
 
 import {
   EntityIconWrapper,
@@ -85,6 +91,7 @@ function EntityItemMenu({
   isBookmarked,
   isPreviewShown,
   isPreviewAvailable,
+  canUseMetabot,
   onPin,
   onMove,
   onCopy,
@@ -96,6 +103,8 @@ function EntityItemMenu({
 }) {
   const isPinned = isItemPinned(item);
   const isParametrized = isFullyParametrized(item);
+  const isModel = isItemModel(item);
+  const isMetabotShown = isModel && canUseMetabot;
 
   const actions = useMemo(
     () =>
@@ -105,6 +114,12 @@ function EntityItemMenu({
           icon: "pin",
           action: onPin,
           event: `${analyticsContext};Entity Item;Pin Item;${item.model}`,
+        },
+        isMetabotShown && {
+          title: t`Ask Metabot`,
+          link: Urls.modelMetabot(item.id),
+          icon: "insight",
+          event: `${analyticsContext};Entity Item;Ask Metabot;${item.model}`,
         },
         onTogglePreview && {
           title: isPreviewShown
@@ -148,6 +163,7 @@ function EntityItemMenu({
       item.model,
       isPinned,
       isParametrized,
+      isMetabotShown,
       isBookmarked,
       isPreviewShown,
       isPreviewAvailable,

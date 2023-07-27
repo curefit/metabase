@@ -13,6 +13,7 @@ type EntityMenuTriggerProps = {
   tooltip?: string;
   triggerProps?: EntityMenuIconButtonProps;
   trigger: React.ReactElement;
+  ariaLabel?: string;
 };
 
 const EntityMenuTrigger = ({
@@ -22,13 +23,19 @@ const EntityMenuTrigger = ({
   tooltip,
   triggerProps,
   trigger,
+  ariaLabel,
 }: EntityMenuTriggerProps) => {
   const triggerContent = trigger ? (
     <span onClick={onClick} {...triggerProps}>
       {trigger}
     </span>
   ) : (
-    <EntityMenuIconButton onClick={onClick} icon={icon} {...triggerProps} />
+    <EntityMenuIconButton
+      aria-label={ariaLabel}
+      onClick={onClick}
+      icon={icon}
+      {...triggerProps}
+    />
   );
   return tooltip ? (
     <Tooltip tooltip={tooltip} isEnabled={!open}>
@@ -39,4 +46,5 @@ const EntityMenuTrigger = ({
   );
 };
 
+// eslint-disable-next-line import/no-default-export -- deprecated usage
 export default EntityMenuTrigger;

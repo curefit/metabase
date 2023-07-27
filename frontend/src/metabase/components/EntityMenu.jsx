@@ -54,6 +54,7 @@ class EntityMenu extends Component {
       tooltip,
       trigger,
       targetOffsetY,
+      triggerAriaLabel,
     } = this.props;
     const { open, menuItemContent } = this.state;
     return (
@@ -61,6 +62,7 @@ class EntityMenu extends Component {
         <EntityMenuTrigger
           trigger={trigger}
           icon={triggerIcon}
+          ariaLabel={triggerAriaLabel}
           onClick={this.toggleMenu}
           open={open}
           tooltip={tooltip}

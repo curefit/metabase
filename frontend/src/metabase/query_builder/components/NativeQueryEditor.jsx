@@ -27,6 +27,8 @@ import { getEngineNativeAceMode } from "metabase/lib/engine";
 import { SQLBehaviour } from "metabase/lib/ace/sql_behaviour";
 import ExplicitSize from "metabase/components/ExplicitSize";
 import Modal from "metabase/components/Modal";
+import { getSetting } from "metabase/selectors/settings";
+import { canGenerateQueriesForDatabase } from "metabase/metabot/utils";
 
 import Databases from "metabase/entities/databases";
 import Snippets from "metabase/entities/snippets";
@@ -49,6 +51,7 @@ import {
   getEditorLineHeight,
   getMaxAutoSizeLines,
 } from "./NativeQueryEditor/utils";
+import NativeQueryEditorPrompt from "./NativeQueryEditorPrompt";
 
 import "./NativeQueryEditor.css";
 import { NativeQueryEditorRoot } from "./NativeQueryEditor.styled";
@@ -67,6 +70,7 @@ class NativeQueryEditor extends Component {
       initialHeight: calcInitialEditorHeight({ query, viewHeight }),
       isSelectedTextPopoverOpen: false,
       mobileShowParameterList: false,
+      isPromptInputVisible: false,
     };
 
     // Ace sometimes fires multiple "change" events in rapid succession
@@ -82,6 +86,12 @@ class NativeQueryEditor extends Component {
     enableRun: true,
     cancelQueryOnLeave: true,
     resizable: true,
+    sidebarFeatures: {
+      dataReference: true,
+      variables: true,
+      snippets: true,
+      promptInput: true,
+    },
   };
 
   UNSAFE_componentWillMount() {
@@ -352,7 +362,7 @@ class NativeQueryEditor extends Component {
           }));
           callback(null, resultsForAce);
         } catch (error) {
-          console.log("error getting autocompletion data", error);
+          // console.log("error getting autocompletion data", error);
           callback(null, []);
         }
       },
@@ -503,6 +513,36 @@ class NativeQueryEditor extends Component {
     });
   };
 
+  togglePromptVisibility = () => {
+    this.setState(prev => ({
+      isPromptInputVisible: !prev.isPromptInputVisible,
+    }));
+  };
+
+  handleQueryUpdate = queryText => {
+    this._editor.setValue(queryText);
+    this._editor.clearSelection();
+  };
+
+  handleQueryGenerated = queryText => {
+    this.handleQueryUpdate(queryText);
+    this._editor.focus();
+  };
+
+  isPromptInputVisible = () => {
+    const { canUsePromptInput, isNativeEditorOpen } = this.props;
+    const database = this.props.query.database();
+    const isSupported =
+      database != null && canGenerateQueriesForDatabase(database);
+
+    return (
+      isNativeEditorOpen &&
+      isSupported &&
+      canUsePromptInput &&
+      this.state.isPromptInputVisible
+    );
+  };
+
   render() {
     const {
       question,
@@ -519,7 +559,10 @@ class NativeQueryEditor extends Component {
       resizable,
       editorContext = "question",
       setDatasetQuery,
+      sidebarFeatures,
     } = this.props;
+
+    const isPromptInputVisible = this.isPromptInputVisible();
 
     const parameters = query.question().parameters();
 
@@ -564,6 +607,13 @@ class NativeQueryEditor extends Component {
               />
             )}
           </div>
+        )}
+        {isPromptInputVisible && (
+          <NativeQueryEditorPrompt
+            databaseId={query.databaseId()}
+            onQueryGenerated={this.handleQueryGenerated}
+            onClose={this.togglePromptVisibility}
+          />
         )}
         <ResizableBox
           ref={this.resizeBox}
@@ -615,6 +665,9 @@ class NativeQueryEditor extends Component {
           {hasEditingSidebar && !readOnly && (
             <NativeQueryEditorSidebar
               runQuery={this.runQuery}
+              features={sidebarFeatures}
+              onShowPromptInput={this.togglePromptVisibility}
+              isPromptInputVisible={isPromptInputVisible}
               {...this.props}
             />
           )}
@@ -623,6 +676,10 @@ class NativeQueryEditor extends Component {
     );
   }
 }
+
+const mapStateToProps = state => ({
+  canUsePromptInput: getSetting(state, "is-metabot-enabled"),
+});
 
 const mapDispatchToProps = dispatch => ({
   fetchQuestion: async id => {
@@ -641,5 +698,5 @@ export default _.compose(
   Databases.loadList({ loadingAndErrorWrapper: false }),
   Snippets.loadList({ loadingAndErrorWrapper: false }),
   SnippetCollections.loadList({ loadingAndErrorWrapper: false }),
-  connect(null, mapDispatchToProps),
+  connect(mapStateToProps, mapDispatchToProps),
 )(NativeQueryEditor);

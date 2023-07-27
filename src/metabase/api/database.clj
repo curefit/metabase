@@ -4,6 +4,8 @@
    [clojure.string :as str]
    [compojure.core :refer [DELETE GET POST PUT]]
    [medley.core :as m]
+   [cheshire.core :as json]
+   [clj-http.client :as client]
    [metabase.analytics.snowplow :as snowplow]
    [metabase.api.common :as api]
    [metabase.api.table :as api.table]
@@ -431,6 +433,29 @@
   []
   (saved-cards-virtual-db-metadata :card :include-tables? true, :include-fields? true))
 
+(defn get-data-lag [table-name schema-name]
+  (try
+    (let [url (str (config/config-str :mb-garuda-backend) "api/v1/metadata")
+          request-body {:tableName table-name :schemaName schema-name}]
+      (println "API URL:" url)
+      (println "Request Body:" request-body)
+
+      (let [response (client/post url
+                                  {:body (json/generate-string request-body)
+                                   :content-type :json
+                                   :socket-timeout 2000
+                                   :conn-timeout 2000
+                                   :conn-request-timeout 2000})]
+        (println "==================================")
+        (println (json/parse-string (:body response)))
+        (json/parse-string (:body response))))
+    (catch java.net.SocketTimeoutException e
+      (println "Error: Request timed out")
+      nil)
+    (catch Throwable e
+      (println "Error occurred while calling API: " (.getMessage e))
+      nil)))
+
 (defn- db-metadata [id include-hidden? include-editable-data-model?]
   (let [db (-> (if include-editable-data-model?
                  (api/check-404 (db/select-one Database :id id))
@@ -457,6 +482,7 @@
         (update :tables (fn [tables]
                           (for [table tables]
                             (-> table
+                                (update :latest_sync_timestamp (get-data-lag (:name table) (:schema table)))
                                 (update :segments (partial filter mi/can-read?))
                                 (update :metrics  (partial filter mi/can-read?)))))))))
 
@@ -487,6 +513,7 @@
         (update :tables (fn [tables]
                           (for [table tables]
                             (-> table
+                                (update :latest_sync_timestamp (get-data-lag (:name table) (:schema table)))
                                 (update :segments (partial filter mi/can-read?))
                                 (update :metrics  (partial filter mi/can-read?)))))))))
 

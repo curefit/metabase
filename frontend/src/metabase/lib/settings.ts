@@ -291,6 +291,9 @@ class MetabaseSettings {
     return this.get("password-complexity") || {};
   }
 
+  isMetabotEnabled() {
+    return this.get("is-metabot-enabled");
+  }
   /**
    * Returns a description of password complexity requirements.
    * Optionally takes a password and returns a description only including the requirements not met.
@@ -334,4 +337,5 @@ function makeRegexTest(property: string, regex: RegExp) {
 const initValues =
   typeof window !== "undefined" ? _.clone(window.MetabaseBootstrap) : null;
 
+// eslint-disable-next-line import/no-default-export -- deprecated usage
 export default new MetabaseSettings(initValues);

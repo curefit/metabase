@@ -1,3 +1,4 @@
+/* eslint no-unused-vars: "off" */
 import React, { useEffect, useCallback, useState } from "react";
 import PropTypes from "prop-types";
 import { t } from "ttag";
@@ -471,7 +472,7 @@ function ViewTitleHeaderRightSide(props) {
             onOpenModal={onOpenModal}
           />
         )}
-      {question && question._card && (
+      {isNative && isSaved && question && question._card && (
         <StyledQuestionMetadata question={question} onOpenModal={onOpenModal} />
       )}
       {hasExploreResultsLink && <ExploreResultsLink question={question} />}

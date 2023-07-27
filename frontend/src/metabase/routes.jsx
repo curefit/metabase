@@ -1,3 +1,4 @@
+/* eslint no-unused-vars: "off" */
 import React from "react";
 import { Redirect, IndexRedirect, IndexRoute } from "react-router";
 import { routerActions } from "react-router-redux";
@@ -13,6 +14,9 @@ import MetabaseSettings from "metabase/lib/settings";
 import App from "metabase/App.tsx";
 
 import ActivityApp from "metabase/home/containers/ActivityApp";
+
+import ModelMetabotApp from "metabase/metabot/containers/ModelMetabotApp";
+import DatabaseMetabotApp from "metabase/metabot/containers/DatabaseMetabotApp";
 
 // auth containers
 import ForgotPasswordApp from "metabase/auth/containers/ForgotPasswordApp";
@@ -132,6 +136,15 @@ const UserCanAccessSettings = UserAuthWrapper({
   redirectAction: routerActions.replace,
 });
 
+export const UserCanAccessMetabot = UserAuthWrapper({
+  predicate: isMetabotEnabled => true, // FIXME [AL]: fix this guard
+  failureRedirectPath: "/",
+  authSelector: () => MetabaseSettings.isMetabotEnabled(),
+  allowRedirectBack: false,
+  wrapperDisplayName: "UserCanAccessMetabot",
+  redirectAction: routerActions.replace,
+});
+
 const IsAuthenticated = MetabaseIsSetup(
   UserIsAuthenticated(({ children }) => children),
 );
@@ -145,6 +158,10 @@ const IsNotAuthenticated = MetabaseIsSetup(
 
 const CanAccessSettings = MetabaseIsSetup(
   UserIsAuthenticated(UserCanAccessSettings(({ children }) => children)),
+);
+
+export const CanAccessMetabot = UserCanAccessMetabot(
+  ({ children }) => children,
 );
 
 export const getRoutes = store => (
@@ -238,6 +255,7 @@ export const getRoutes = store => (
           <Route path="notebook" component={QueryBuilder} />
           <Route path=":slug" component={QueryBuilder} />
           <Route path=":slug/notebook" component={QueryBuilder} />
+          <Route path=":slug/metabot" component={QueryBuilder} />
           <Route path=":slug/:objectId" component={QueryBuilder} />
         </Route>
 
@@ -260,6 +278,11 @@ export const getRoutes = store => (
           <Redirect from="*" to="usage" />
         </Route>
 
+        <Route path="/metabot" component={CanAccessMetabot}>
+          <Route path="database/:databaseId" component={DatabaseMetabotApp} />
+          <Route path="model/:slug" component={ModelMetabotApp} />
+        </Route>
+
         <Route path="/model">
           <IndexRoute component={QueryBuilder} />
           <Route path="new" title={t`New Model`} component={NewModelOptions} />
@@ -268,9 +291,11 @@ export const getRoutes = store => (
           <Route path=":slug/notebook" component={QueryBuilder} />
           <Route path=":slug/query" component={QueryBuilder} />
           <Route path=":slug/metadata" component={QueryBuilder} />
+          <Route path=":slug/metabot" component={QueryBuilder} />
           <Route path=":slug/:objectId" component={QueryBuilder} />
           <Route path="query" component={QueryBuilder} />
           <Route path="metadata" component={QueryBuilder} />
+          <Route path="metabot" component={QueryBuilder} />
         </Route>
 
         <Route path="browse" component={BrowseApp}>

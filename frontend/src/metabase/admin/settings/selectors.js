@@ -1,4 +1,5 @@
 /* eslint-disable react/display-name */
+/* eslint no-unused-vars: "off" */
 import React from "react";
 import _ from "underscore";
 import { createSelector } from "reselect";
@@ -583,6 +584,47 @@ const SECTIONS = updateSectionsWithPlugins({
         getHidden: settings => !settings["persisted-models-enabled"],
         onChanged: (previousValue, value) =>
           PersistedModelsApi.setRefreshSchedule({ cron: value }),
+      },
+    ],
+  },
+  metabot: {
+    name: t`Metabot`,
+    order: 13,
+    settings: [
+      {
+        key: "is-metabot-enabled",
+        display_name: t`Enable Metabot`,
+        description: t`Metabot is in Alpha, and in general LargeLanguageModel generated SQL should be examined carefully before using its results in critical applications. By using Metabot, you agree to share prompt and resultant queries with Metabase to help us improve Metabot’s performance.`,
+        type: "boolean",
+      },
+      {
+        key: "openai-api-key",
+        display_name: t`OpenAI API Key`,
+        description: null,
+        type: "string",
+        getHidden: (_, settings) => !settings["is-metabot-enabled"],
+      },
+      {
+        key: "openai-organization",
+        display_name: t`OpenAI Organization ID`,
+        description: null,
+        type: "string",
+        getHidden: (_, settings) => !settings["is-metabot-enabled"],
+      },
+      {
+        key: "openai-model",
+        display_name: t`OpenAI Model`,
+        description: null,
+        type: "select",
+        getProps: (_, settings) => {
+          const models = settings["openai-available-models"] ?? [];
+
+          return {
+            options: models.map(model => ({ name: model.id, value: model.id })),
+            disabled: !models.length,
+          };
+        },
+        getHidden: (_, settings) => !settings["is-metabot-enabled"],
       },
     ],
   },

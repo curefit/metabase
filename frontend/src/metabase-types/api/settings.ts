@@ -161,6 +161,11 @@ export interface SettingDefinition {
   value?: unknown;
 }
 
+export interface OpenAiModel {
+  id: string;
+  owned_by: string;
+}
+
 export interface Settings {
   "active-users-count"?: number;
   "admin-email": string;
@@ -192,11 +197,16 @@ export interface Settings {
   "hide-embed-branding?": boolean;
   "is-hosted?": boolean;
   "jwt-enabled"?: boolean;
+  "is-metabot-enabled": boolean;
   "jwt-configured"?: boolean;
   "ldap-configured?": boolean;
   "ldap-enabled": boolean;
   "loading-message": LoadingMessage;
   "other-sso-enabled?": boolean | null;
+  "openai-api-key": string | null;
+  "openai-organization": string | null;
+  "openai-model": string | null;
+  "openai-available-models"?: OpenAiModel[];
   "password-complexity": PasswordComplexity;
   "persisted-models-enabled": boolean;
   "premium-embedding-token": string | null;

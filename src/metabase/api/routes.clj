@@ -7,6 +7,7 @@
    [metabase.api.alert :as api.alert]
    [metabase.api.automagic-dashboards :as api.magic]
    [metabase.api.bookmark :as api.bookmark]
+   [metabase.api.metabot :as api.metabot]
    [metabase.api.card :as api.card]
    [metabase.api.collection :as api.collection]
    [metabase.api.dashboard :as api.dashboard]
@@ -83,6 +84,7 @@
   (context "/ldap"                 [] (+auth api.ldap/routes))
   (context "/login-history"        [] (+auth api.login-history/routes))
   (context "/premium-features"     [] (+auth api.premium-features/routes))
+           (context "/metabot" [] (+auth api.metabot/routes))
   (context "/metric"               [] (+auth api.metric/routes))
   (context "/native-query-snippet" [] (+auth api.native-query-snippet/routes))
   (context "/notify"               [] (+apikey api.notify/routes))

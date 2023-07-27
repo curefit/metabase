@@ -31,12 +31,12 @@ import {
   maybeUsePivotEndpoint,
   MetabaseApi,
 } from "metabase/services";
-import { ParameterValues } from "metabase-types/types/Parameter";
+// import { ParameterValues } from "metabase-types/types/Parameter";
 import { Card as CardObject, DatasetQuery } from "metabase-types/types/Card";
 import { VisualizationSettings } from "metabase-types/api/card";
 import { Column, Dataset, Value } from "metabase-types/types/Dataset";
 import { TableId } from "metabase-types/types/Table";
-import { DatabaseId } from "metabase-types/types/Database";
+// import { DatabaseId } from "metabase-types/types/Database";
 import {
   ClickObject,
   DimensionValue,
@@ -47,6 +47,8 @@ import {
   CollectionId,
   Parameter as ParameterObject,
   ParameterId,
+  DatabaseId,
+  ParameterValues,
 } from "metabase-types/api";
 
 import {
@@ -1368,6 +1370,7 @@ class QuestionInner {
   }
 }
 
+// eslint-disable-next-line import/no-default-export -- deprecated usage
 export default class Question extends memoizeClass<QuestionInner>("query")(
   QuestionInner,
 ) {

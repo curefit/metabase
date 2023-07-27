@@ -1,3 +1,4 @@
+/* eslint no-unused-vars: "off" */
 import React from "react";
 import { connect } from "react-redux";
 import { t } from "ttag";
@@ -14,6 +15,7 @@ import SidebarContent from "metabase/query_builder/components/SidebarContent";
 import type Table from "metabase-lib/metadata/Table";
 import TableInfoLoader from "./TableInfoLoader";
 import FieldList from "./FieldList";
+import DataLag from "./DataLag";
 import { PaneContent } from "./Pane.styled";
 
 interface TablePaneProps {
@@ -27,43 +29,54 @@ const mapStateToProps = (state: State, props: TablePaneProps) => ({
   table: Tables.selectors.getObject(state, { entityId: props.table.id }),
 });
 
-const TablePane = ({ table, onItemClick, onBack, onClose }: TablePaneProps) => (
-  <SidebarContent
-    title={table.name}
-    icon={"table"}
-    onBack={onBack}
-    onClose={onClose}
-  >
-    <PaneContent>
-      <TableInfoLoader table={table}>
-        <div className="ml1">
-          {table.description ? (
-            <Description>{table.description}</Description>
-          ) : (
-            <EmptyDescription>{t`No description`}</EmptyDescription>
-          )}
-        </div>
-        <div className="my2">
-          {table.fields.length ? (
-            <>
-              <FieldList
-                fields={table.fields}
-                onFieldClick={f => onItemClick("field", f)}
+const TablePane = ({ table, onItemClick, onBack, onClose }: TablePaneProps) => {
+  return (
+    <SidebarContent
+      title={table.name}
+      icon={"table"}
+      onBack={onBack}
+      onClose={onClose}
+    >
+      <PaneContent>
+        <TableInfoLoader table={table}>
+          <div className="ml1">
+            {table.description ? (
+              <Description>{table.description}</Description>
+            ) : (
+              <EmptyDescription>{t`No description`}</EmptyDescription>
+            )}
+          </div>
+          <div className="my2">
+            {table.latest_sync_timestamp ? (
+              <DataLag
+                latest_sync_timestamp={table.latest_sync_timestamp}
+                onDataLagClick={f => onItemClick("dataLag", f)}
               />
-              {table.connectedTables() && (
-                <ConnectedTableList
-                  tables={table.connectedTables()}
-                  onTableClick={t => onItemClick("table", t)}
+            ) : null}
+          </div>
+          <div className="my2">
+            {table.fields.length ? (
+              <>
+                <FieldList
+                  fields={table.fields}
+                  onFieldClick={f => onItemClick("field", f)}
                 />
-              )}
-            </>
-          ) : null}
-        </div>
-      </TableInfoLoader>
-    </PaneContent>
-  </SidebarContent>
-);
+                {table.connectedTables() && (
+                  <ConnectedTableList
+                    tables={table.connectedTables()}
+                    onTableClick={t => onItemClick("table", t)}
+                  />
+                )}
+              </>
+            ) : null}
+          </div>
+        </TableInfoLoader>
+      </PaneContent>
+    </SidebarContent>
+  );
+};
 
+// eslint-disable-next-line import/no-default-export -- deprecated usage
 export default _.compose(
   Tables.load({
     id: (_state: State, props: TablePaneProps) => props.table.id,

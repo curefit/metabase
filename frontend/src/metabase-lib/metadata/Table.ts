@@ -32,6 +32,7 @@ class TableInner extends Base {
   schema_name: string;
   db_id: number;
   fields: Field[];
+  latest_sync_timestamp?: any[];
   metadata?: Metadata;
   db?: Database | undefined | null;
 
@@ -186,6 +187,7 @@ class TableInner extends Base {
   }
 }
 
+// eslint-disable-next-line import/no-default-export -- deprecated usage
 export default class Table extends memoizeClass<TableInner>(
   "aggregationOperators",
   "aggregationOperatorsLookup",

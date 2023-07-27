@@ -63,6 +63,10 @@ export function isItemPinned(item: CollectionItem) {
   return item.collection_position != null;
 }
 
+export function isItemModel(item: CollectionItem) {
+  return item.model === "dataset";
+}
+
 export function isItemQuestion(item: CollectionItem) {
   return item.model === "card";
 }

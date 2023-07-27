@@ -48,6 +48,7 @@
    :mb-data-lake-models-cache-location "s3://cf-analytics-datalake/metabase"
    ;:mb-garuda-backend      "http://localhost:9096/"
    :mb-garuda-backend      "http://dataplatform-garuda.production.cure.fit.internal/"
+   :mb-prompt-file-path    "/Users/abhishek.gedela/templates.json"
    })
 
 ;; separate map for EE stuff so merge conflicts aren't annoying.

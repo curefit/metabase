@@ -1,5 +1,4 @@
-/* eslint "react/prop-types": "warn" */
-import React from "react";
+/* eslint-disable */
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { useFormik } from "formik";
@@ -17,6 +16,7 @@ import UsefulQuestions from "metabase/reference/components/UsefulQuestions";
 
 import * as metadataActions from "metabase/redux/metadata";
 import * as actions from "metabase/reference/reference";
+import DS from "metabase/reference/components/Detail.css";
 import { getQuestionUrl } from "../utils";
 
 import {
@@ -188,6 +188,34 @@ const TableDetail = props => {
                     />
                   </li>
                 )}
+                <li>
+                  <div className={DS.detailTitle}>
+                    <span className={DS.detailName}>Data Lag</span>
+                  </div>
+                </li>
+                <li className="relative">
+                  <table className="ContentTable">
+                    <thead>
+                      <tr>
+                        <th>Table Name</th>
+                        <th>Synced Till</th>
+                        <th>Updated Till</th>
+                      </tr>
+                    </thead>
+                    {entity.latest_sync_timestamp?.map((item, index) => (
+                      <tbody>
+                        <tr key={index}>
+                          <td>{`${item.schema_name}.${item.table_name}`}</td>
+                          <td>
+                            {new Date(item.latest_sync_timestamp).toString()}
+                          </td>
+                          <td>{item.latest_record_timestamp || "-"}</td>
+                        </tr>
+                      </tbody>
+                    ))}
+                  </table>
+                </li>
+                <br />
                 <li className="relative">
                   <Detail
                     id="points_of_interest"

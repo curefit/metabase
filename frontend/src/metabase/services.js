@@ -1,7 +1,7 @@
 import _ from "underscore";
 import { GET, PUT, POST, DELETE } from "metabase/lib/api";
 import { IS_EMBED_PREVIEW } from "metabase/lib/embed";
-
+import { normalizeParameters } from "metabase-lib/parameters/utils/parameter-values";
 import Question from "metabase-lib/Question";
 import { getPivotColumnSplit } from "metabase-lib/queries/utils/pivot";
 import { injectTableMetadata } from "metabase-lib/metadata/utils/tables";
@@ -113,6 +113,65 @@ export const CardApi = {
   queryExplainer: POST("/api/card/explain/:cardId"),
   queryOptimiser: POST("/api/card/optimise/:cardId"),
 };
+
+export async function runQuestionQuery(
+  question,
+  {
+    cancelDeferred,
+    isDirty = false,
+    ignoreCache = false,
+    collectionPreview = false,
+  } = {},
+) {
+  const canUseCardApiEndpoint = !isDirty && question.isSaved();
+  const parameters = normalizeParameters(question.parameters());
+  const card = question.card();
+
+  if (canUseCardApiEndpoint) {
+    const { dashboardId, dashcardId } = card;
+
+    const queryParams = {
+      cardId: question.id(),
+      dashboardId,
+      dashcardId,
+      ignore_cache: ignoreCache,
+      collection_preview: collectionPreview,
+      parameters,
+    };
+
+    return [
+      await maybeUsePivotEndpoint(
+        dashboardId ? DashboardApi.cardQuery : CardApi.query,
+        card,
+        question.metadata(),
+      )(queryParams, {
+        cancelled: cancelDeferred.promise,
+      }),
+    ];
+  }
+
+  const getDatasetQueryResult = datasetQuery => {
+    const datasetQueryWithParameters = { ...datasetQuery, parameters };
+    return maybeUsePivotEndpoint(
+      MetabaseApi.dataset,
+      card,
+      question.metadata(),
+    )(
+      datasetQueryWithParameters,
+      cancelDeferred
+        ? {
+            cancelled: cancelDeferred.promise,
+          }
+        : {},
+    );
+  };
+
+  const datasetQueries = question
+    .atomicQueries()
+    .map(query => query.datasetQuery());
+
+  return Promise.all(datasetQueries.map(getDatasetQueryResult));
+}
 
 export const DashboardApi = {
   list: GET("/api/dashboard"),
@@ -514,4 +573,11 @@ export const ActionsApi = {
   createPublicLink: POST("/api/action/:id/public_link"),
   deletePublicLink: DELETE("/api/action/:id/public_link"),
   listPublic: GET("/api/action/public"),
+};
+
+export const MetabotApi = {
+  modelPrompt: POST("/api/metabot/model/:modelId"),
+  databasePrompt: POST("/api/metabot/database/:databaseId"),
+  databasePromptQuery: POST("/api/metabot/database/:databaseId/query"),
+  sendFeedback: POST("/api/metabot/feedback"),
 };

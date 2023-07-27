@@ -2,8 +2,11 @@
   "/api/table endpoints."
   (:require
    [compojure.core :refer [GET POST PUT]]
+   [cheshire.core :as json]
+   [clj-http.client :as client]
    [medley.core :as m]
    [metabase.api.common :as api]
+   [metabase.config :as config]
    [metabase.db.query :as mdb.query]
    [metabase.driver :as driver]
    [metabase.driver.util :as driver.u]
@@ -43,6 +46,28 @@
     (hydrate tables :db)
     (filterv mi/can-read? tables)))
 
+(defn get-data-lag [table-name schema-name]
+  (try
+    (let [url (str (config/config-str :mb-garuda-backend) "api/v1/metadata")
+          request-body {:tableName table-name :schemaName schema-name}]
+      (println "API URL:" url)
+      (println "Request Body:" request-body)
+
+      (let [response (client/post url
+                                  {:body (json/generate-string request-body)
+                                   :content-type :json
+                                   :socket-timeout 2000
+                                   :conn-timeout 2000
+                                   :conn-request-timeout 2000})]
+        (json/parse-string (:body response))))
+    (catch java.net.SocketTimeoutException e
+      (println "Error: Request timed out")
+      nil)
+    (catch Throwable e
+      (println "Error occurred while calling API: " (.getMessage e))
+      nil)))
+
+
 (api/defendpoint GET "/:id"
   "Get `Table` with ID."
   [id include_editable_data_model]
@@ -50,7 +75,8 @@
                             api/write-check
                             api/read-check)]
     (-> (api-perm-check-fn Table id)
-        (hydrate :db :pk_field))))
+        (hydrate :db :pk_field)
+        (assoc :latest_sync_timestamp (get-data-lag (db/select-one-field :name 'Table, :id id) (db/select-one-field :schema 'Table, :id id))))))
 
 (defn- update-table!*
   "Takes an existing table and the changes, updates in the database and optionally calls `table/update-field-positions!`

@@ -5,6 +5,12 @@ import { normalize } from "normalizr";
 import { compose } from "redux";
 import { createSelectorCreator } from "reselect";
 
+import {
+  useDispatch as useDispatchOriginal,
+  useSelector as useSelectorOriginal,
+  useStore as useStoreOriginal,
+} from "react-redux";
+
 import * as MetabaseAnalytics from "metabase/lib/analytics";
 import {
   setRequestLoading,
@@ -22,6 +28,9 @@ export { handleActions, createAction } from "redux-actions";
 export function createThunkAction(actionType, thunkCreator) {
   return withAction(actionType)(thunkCreator);
 }
+
+export const useDispatch = useDispatchOriginal;
+export const useSelector = useSelectorOriginal;
 
 // turns string timestamps into moment objects
 export function momentifyTimestamps(
