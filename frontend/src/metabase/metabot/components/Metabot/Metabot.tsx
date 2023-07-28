@@ -3,6 +3,7 @@ import { connect } from "react-redux";
 import { MetabotEntityId, MetabotEntityType } from "metabase-types/store";
 import Question from "metabase-lib/Question";
 import Database from "metabase-lib/metadata/Database";
+import Table from "metabase-lib/metadata/Table";
 import { init, InitPayload, reset } from "../../actions";
 import MetabotHeader from "../MetabotHeader";
 import MetabotQueryBuilder from "../MetabotQueryBuilder";
@@ -15,6 +16,8 @@ interface OwnProps {
   model?: Question;
   database?: Database;
   databases?: Database[];
+  table?: Table;
+  tables?: Table[];
 }
 
 interface DispatchProps {
@@ -36,6 +39,8 @@ const Metabot = ({
   model,
   database,
   databases,
+  table,
+  tables,
   onInit,
   onReset,
 }: MetabotProps) => {
@@ -46,7 +51,13 @@ const Metabot = ({
 
   return (
     <MetabotRoot>
-      <MetabotHeader model={model} database={database} databases={databases} />
+      <MetabotHeader
+        model={model}
+        database={database}
+        databases={databases}
+        table={table}
+        tables={tables}
+      />
       <MetabotQueryBuilder />
     </MetabotRoot>
   );

@@ -3,6 +3,9 @@
   where X is the thing we want to extract from the bot response."
   (:require
     [cheshire.core :as json]
+    [metabase.config :as config]
+    [cheshire.core :as json]
+    [clj-http.client :as client]
     [metabase.lib.native :as lib-native]
     [metabase.metabot.client :as metabot-client]
     [metabase.metabot.settings :as metabot-settings]
@@ -63,6 +66,71 @@
         (log/infof "No sql inferred for model '%s' with prompt '%s'." (:id model) user_prompt)))
     (log/warn "Metabot is not enabled")))
 
+(defn get-watson-query [sql ddl]
+  (try
+    (let [url (str (config/config-str :mb-watson-backend) "api/v1/query_validator ")
+          request-body {:query sql :ddl ddl :engine "trino"}]
+      (println "API URL:" url)
+      (println "Request Body:" request-body)
+
+      (let [response (client/post url
+                                  {:body (json/generate-string request-body)
+                                   :content-type :json
+                                   :socket-timeout 2000
+                                   :conn-timeout 2000
+                                   :conn-request-timeout 2000})]
+        (println "==================================")
+        (println (json/parse-string (:body response)))
+        (json/parse-string (:body response))))
+    (catch java.net.SocketTimeoutException e
+      (println "Error: Request timed out")
+      nil)
+    (catch Throwable e
+      (println "Error occurred while calling API: " (.getMessage e))
+      nil)))
+
+(defn infer-db-native-sql-query
+  "Given a database and user prompt, determine a sql query to answer my question."
+  [{{database-id :id} :database
+    :keys             [user_prompt prompt_template_versions] :as context}
+   schema_name
+   table_id]
+  (log/infof "Metabot is inferring sql for database '%s' with prompt '%s'." database-id user_prompt)
+  (if (metabot-settings/is-metabot-enabled)
+    (let [prompt-objects (->> (t2/select Table {:select [:t.name :t.schema :t.id]
+                                                :from [[:metabase_table :t]]
+                                                :where [:or [:= :t.id table_id] [:like :name "%%_dim%%"]]})
+                           ;(t2/select [Table :name :schema :id] :db_id database-id
+                           ;              :id table_id
+                           ;              :name [:like "%_dim%"]
+                           ;              :schema schema_name :active true :visibility_type nil)
+                              (map metabot-util/memoized-create-table-embedding)
+                              (filter identity))
+          ddl            (metabot-util/generate-prompt prompt-objects user_prompt)
+          context        (assoc-in context [:database :create_database_ddl] ddl)
+          {:keys [prompt_template version] :as prompt} (metabot-util/create-prompt context)]
+      (println "============generate prompt==============")
+      (println ddl)
+      (if-some [sql (metabot-util/find-result
+                      metabot-util/extract-sql
+                      (metabot-client/invoke-metabot prompt))]
+        (let [watson-sql    (:output (get-watson-query sql ddl))
+              template-tags {}
+              dataset       {:dataset_query          {:database database-id
+                                                      :type     "native"
+                                                      :native   {:query         watson-sql
+                                                                 :template-tags template-tags}}
+                             :display                :table
+                             :visualization_settings {}}]
+         {:card                     dataset
+         :prompt_template_versions (vec
+                                     (conj
+                                       (vec prompt_template_versions)
+                                       (format "%s:%s" prompt_template version)))
+         :bot-sql                  sql})
+        (log/infof "No sql inferred for database '%s' with prompt '%s'." database-id user_prompt)))
+    (log/warn "Metabot is not enabled")))
+
 (defn match-best-model
   "Find the model in the db that best matches the prompt using embedding matching."
   [{{database-id :id :keys [models]} :database :keys [user_prompt]}]
@@ -114,10 +182,11 @@
 (defn infer-native-sql-query
   "Given a database and user prompt, determine a sql query to answer my question."
   [{{database-id :id} :database
-    :keys             [user_prompt prompt_template_versions] :as context}]
+    :keys             [user_prompt prompt_template_versions] :as context}
+   schema_name]
   (log/infof "Metabot is inferring sql for database '%s' with prompt '%s'." database-id user_prompt)
   (if (metabot-settings/is-metabot-enabled)
-    (let [prompt-objects (->> (t2/select [Table :name :schema :id] :db_id database-id :active true :visibility_type nil)
+    (let [prompt-objects (->> (t2/select [Table :name :schema :id] :db_id database-id :schema schema_name :active true :visibility_type nil)
                               (map metabot-util/memoized-create-table-embedding)
                               (filter identity))
           ddl            (metabot-util/generate-prompt prompt-objects user_prompt)

@@ -50,6 +50,7 @@ const NativeQueryEditorPrompt = ({
         {
           databaseId,
           question: prompt,
+          schema_name: "dwh_fitness_mart",
         },
         { cancelled: cancelDeferred.current.promise },
       );

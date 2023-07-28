@@ -12,9 +12,11 @@ import {
   RUN_QUESTION_QUERY_REJECTED,
   SUBMIT_FEEDBACK_FORM,
   UPDATE_PROMPT,
+  UPDATE_TABLE,
   UPDATE_QUESTION,
   CANCEL_QUERY,
   SET_UI_CONTROLS,
+  UPDATE_INITIAL_TABLE,
 } from "./actions";
 import { DEFAULT_UI_CONTROLS } from "./constants";
 
@@ -59,6 +61,24 @@ export const prompt = handleActions(
   {
     [INIT]: { next: (state, { payload }) => payload.initialPrompt ?? "" },
     [UPDATE_PROMPT]: { next: (state, { payload }) => payload },
+    [RESET]: { next: () => "" },
+  },
+  "",
+);
+
+export const table = handleActions(
+  {
+    [INIT]: { next: (state, { payload }) => payload.table ?? "" },
+    [UPDATE_TABLE]: { next: (state, { payload }) => payload },
+    [RESET]: { next: () => "" },
+  },
+  "",
+);
+
+export const initialTable = handleActions(
+  {
+    [INIT]: { next: (state, { payload }) => payload.initialTable ?? "" },
+    [UPDATE_INITIAL_TABLE]: { next: (state, { payload }) => payload },
     [RESET]: { next: () => "" },
   },
   "",

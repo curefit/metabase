@@ -1,6 +1,7 @@
 import {
   Card,
   CardId,
+  TableId,
   DatabaseId,
   Dataset,
   MetabotFeedbackType,
@@ -16,7 +17,10 @@ export interface MetabotState {
   entityType: MetabotEntityType | null;
   card: Card | null;
   promptTemplateVersions: string[] | null;
+  datasetQuery: string;
   prompt: string;
+  table: TableId;
+  initialTable: TableId;
   queryStatus: MetabotQueryStatus;
   queryResults: [Dataset] | null;
   queryError: unknown;

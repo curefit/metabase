@@ -12,6 +12,7 @@
    [metabase.metabot.client :as metabot-client]
    [metabase.metabot.settings :as metabot-settings]
    [metabase.models :refer [Card Field FieldValues Table]]
+   [metabase.models.metric :refer [Metric]]
    [metabase.query-processor :as qp]
    [metabase.query-processor.reducible :as qp.reducible]
    [metabase.query-processor.util.add-alias-info :as add]
@@ -261,6 +262,11 @@
                            acc))
                        {}
                        fields)
+         metrics-data (t2/select [Metric :name :description] :table_id table-id)
+         metrics-str  (->> metrics-data
+                           (map (fn [{:keys [name description]}]
+                                  (str "metric_name: " name ", metric_description: " description)))
+                           (clojure.string/join "\n"))
          columns      (vec
                        (for [{column-name :name :keys [database_required database_type description]} fields]
                          (cond-> [column-name
@@ -296,7 +302,8 @@
                        first
                        mdb.query/format-sql)
          ddl-str      (str/join "\n\n" (conj (vec (vals enums)) create-sql))
-         nchars       (count ddl-str)]
+         complete-ddl (str ddl-str "\n\n" metrics-str)
+         nchars       (count complete-ddl)]
      (log/debugf "Pseudo-ddl for table '%s.%s'(%s) describes %s fields, %s enums, and contains %s chars (~%s tokens)."
                  schema-name
                  table-name
@@ -305,7 +312,7 @@
                  (count enums)
                  nchars
                  (quot nchars 4))
-     ddl-str))
+     complete-ddl))
   ([table]
    (table->pseudo-ddl table (metabot-settings/enum-cardinality-threshold))))
 

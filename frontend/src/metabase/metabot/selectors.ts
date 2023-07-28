@@ -28,6 +28,14 @@ export const getPrompt = (state: State) => {
   return state.metabot.prompt;
 };
 
+export const getTable = (state: State) => {
+  return state.metabot.table;
+};
+
+export const getInitialTable = (state: State) => {
+  return state.metabot.initialTable;
+};
+
 export const getQueryStatus = (state: State) => {
   return state.metabot.queryStatus;
 };

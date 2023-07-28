@@ -5,21 +5,31 @@ import { jt, t } from "ttag";
 import _ from "underscore";
 import * as Urls from "metabase/lib/urls";
 import Databases from "metabase/entities/databases";
+import Tables from "metabase/entities/tables";
 import Questions from "metabase/entities/questions";
 import Search from "metabase/entities/search";
 import { getUser } from "metabase/selectors/user";
-import { CollectionItem, DatabaseId, User } from "metabase-types/api";
+import { CollectionItem, DatabaseId, User, TableId } from "metabase-types/api";
 import { Dispatch, State } from "metabase-types/store";
 import { canUseMetabotOnDatabase } from "metabase/metabot/utils";
 import Question from "metabase-lib/Question";
 import Database from "metabase-lib/metadata/Database";
+import Table from "metabase-lib/metadata/Table";
 import DatabasePicker from "../DatabasePicker";
 import MetabotMessage from "../MetabotMessage";
 import MetabotPrompt from "../MetabotPrompt";
+import DatabaseTablePicker from "../DatabaseTablePicker/DatabaseTablePicker";
+import { updateInitialTable } from "../../actions";
+import { getInitialTable } from "../../selectors";
 import { MetabotHeader } from "./MetabotWidget.styled";
 
 interface DatabaseLoaderProps {
   databases: Database[];
+  onTableChange: (tableId: TableId) => void;
+}
+
+interface TableLoaderProps {
+  tables: Table[];
 }
 
 interface SearchLoaderProps {
@@ -33,42 +43,69 @@ interface CardLoaderProps {
 interface StateProps {
   user: User | null;
   databases: Database[];
+  tables: Table[];
+  tableState: TableId;
 }
 
 interface DispatchProps {
-  onSubmitQuery: (databaseId: DatabaseId, query: string) => void;
+  // onTableChange: (tableId: TableId) => void;
+  onSubmitQuery: (
+    databaseId: DatabaseId,
+    query: string,
+    tableId: TableId,
+  ) => void;
 }
 
 type MetabotWidgetProps = StateProps &
   DispatchProps &
   CardLoaderProps &
-  DatabaseLoaderProps;
+  DatabaseLoaderProps &
+  TableLoaderProps;
 
 const mapStateToProps = (
   state: State,
-  { databases }: DatabaseLoaderProps,
+  { databases, tables }: DatabaseLoaderProps & TableLoaderProps,
 ): StateProps => ({
   user: getUser(state),
   databases: databases.filter(canUseMetabotOnDatabase),
+  tables: tables,
+  tableState: getInitialTable(state),
 });
 
 const mapDispatchToProps = (dispatch: Dispatch): DispatchProps => ({
-  onSubmitQuery: (databaseId, prompt) =>
+  // onTableChange: tableId => dispatch(updateInitialTable(tableId)),
+  onSubmitQuery: (databaseId, prompt, tableId) => {
+    dispatch(updateInitialTable(tableId));
     dispatch(
       push({ pathname: Urls.databaseMetabot(databaseId), query: { prompt } }),
-    ),
+    );
+  },
 });
 
 const MetabotWidget = ({
   databases,
+  tables,
   model,
   user,
+  tableState,
   onSubmitQuery,
-}: MetabotWidgetProps) => {
-  const initialDatabaseId = model?.databaseId ?? databases[0]?.id;
+}: // onTableChange,
+MetabotWidgetProps) => {
+  // console.log("------tables---------");
+  // console.log(tableState);
+  // console.log(tables[0].display_name);
+
+  const selectedDb: Database[] = databases.filter(e => e.id === 39);
+
+  const initialTableId = tables[0].id;
+
+  const initialDatabaseId =
+    model?.databaseId ?? databases.filter(e => e.id === 39)[0].id;
   const [databaseId, setDatabaseId] = useState(initialDatabaseId);
+  const [tableId, setTableId] = useState(initialTableId);
+  // const tableId = tableState || tables[0].id;
   const [prompt, setPrompt] = useState("");
-  const handleSubmitPrompt = () => onSubmitQuery(databaseId, prompt);
+  const handleSubmitPrompt = () => onSubmitQuery(databaseId, prompt, tableId);
 
   return (
     <MetabotHeader>
@@ -78,11 +115,19 @@ const MetabotWidget = ({
           jt`I’m thinking about the ${(
             <DatabasePicker
               key="picker"
-              databases={databases}
+              databases={selectedDb}
               selectedDatabaseId={databaseId}
               onChange={setDatabaseId}
             />
-          )} database right now.`}
+          )} database right now. 
+          You can select a Fact ${(
+            <DatabaseTablePicker
+              databases={selectedDb}
+              table={tables}
+              selectedTableId={tableId}
+              onChange={setTableId}
+            />
+          )}`}
       </MetabotMessage>
       <MetabotPrompt
         prompt={prompt}
@@ -125,5 +170,12 @@ export default _.compose(
     entityAlias: "model",
   }),
   Databases.loadList(),
+  Tables.loadList({
+    query: (state: State, props: TableLoaderProps) => ({
+      dbId: 39,
+      schemaName: "dwh_fitness_mart",
+    }),
+    listName: "tables",
+  }),
   connect(mapStateToProps, mapDispatchToProps),
 )(MetabotWidget);

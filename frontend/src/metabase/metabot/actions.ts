@@ -19,18 +19,21 @@ import {
   getEntityId,
   getEntityType,
   getFeedbackType,
+  getInitialTable,
   getIsQueryRunning,
   getNativeQueryText,
   getPrompt,
   getPromptTemplateVersions,
   getQueryResultsError,
   getQuestion,
+  getTable,
 } from "./selectors";
 import {
   MetabotQueryRunResult,
   trackMetabotFeedbackReceived,
   trackMetabotQueryRun,
 } from "./analytics";
+import { entityId } from "./reducers";
 
 const trackQueryRun = (
   state: State,
@@ -90,6 +93,12 @@ export const cancelQuery = () => (dispatch: Dispatch, getState: GetState) => {
 export const UPDATE_PROMPT = "metabase/metabot/UPDATE_PROMPT";
 export const updatePrompt = createAction(UPDATE_PROMPT);
 
+export const UPDATE_TABLE = "metabase/metabot/UPDATE_TABLE";
+export const updateTable = createAction(UPDATE_TABLE);
+
+export const UPDATE_INITIAL_TABLE = "metabase/metabot/UPDATE_INITIAL_TABLE";
+export const updateInitialTable = createAction(UPDATE_INITIAL_TABLE);
+
 export const RUN_PROMPT_QUERY = "metabase/metabot/RUN_PROMPT_QUERY";
 export const RUN_PROMPT_QUERY_FULFILLED =
   "metabase/metabot/RUN_PROMPT_QUERY_FULFILLED";
@@ -145,6 +154,7 @@ export const fetchQuestion =
     const entityId = getEntityId(getState());
     const entityType = getEntityType(getState());
     const question = getPrompt(getState());
+    const table_id = getTable(getState());
 
     const payload =
       entityType === "model"
@@ -153,7 +163,12 @@ export const fetchQuestion =
             { cancelled: cancelQueryDeferred.promise },
           )
         : await MetabotApi.databasePrompt(
-            { databaseId: entityId, question },
+            {
+              databaseId: entityId,
+              question,
+              schema_name: "dwh_fitness_mart",
+              table_id: table_id,
+            },
             { cancelled: cancelQueryDeferred.promise },
           );
 
@@ -165,9 +180,8 @@ export const fetchQueryResults =
   (cancelQueryDeferred: Deferred) =>
   async (dispatch: Dispatch, getState: GetState) => {
     const question = getQuestion(getState());
-    const payload = await apiRunQuestionQuery(question, {
-      cancelDeferred: cancelQueryDeferred,
-    });
+
+    const payload = await apiRunQuestionQuery(question);
     dispatch({ type: FETCH_QUERY_RESULTS, payload });
   };
 
