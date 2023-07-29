@@ -81,7 +81,8 @@
                                    :conn-request-timeout 2000})]
         (println "==================================")
         (println (json/parse-string (:body response)))
-        (json/parse-string (:body response))))
+        (println (:output (json/parse-string (:body response))))
+        (:output (json/parse-string (:body response)))))
     (catch java.net.SocketTimeoutException e
       (println "Error: Request timed out")
       nil)
@@ -114,7 +115,7 @@
       (if-some [sql (metabot-util/find-result
                       metabot-util/extract-sql
                       (metabot-client/invoke-metabot prompt))]
-        (let [watson-sql    (:output (get-watson-query sql ddl))
+        (let [watson-sql    (get-watson-query sql ddl)
               template-tags {}
               dataset       {:dataset_query          {:database database-id
                                                       :type     "native"
