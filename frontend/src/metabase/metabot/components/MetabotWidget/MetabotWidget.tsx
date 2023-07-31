@@ -19,13 +19,13 @@ import DatabasePicker from "../DatabasePicker";
 import MetabotMessage from "../MetabotMessage";
 import MetabotPrompt from "../MetabotPrompt";
 import DatabaseTablePicker from "../DatabaseTablePicker/DatabaseTablePicker";
-import { updateInitialTable } from "../../actions";
-import { getInitialTable } from "../../selectors";
+import { updateTable } from "../../actions";
+import { getInitialTable, getTable } from "../../selectors";
 import { MetabotHeader } from "./MetabotWidget.styled";
 
 interface DatabaseLoaderProps {
   databases: Database[];
-  onTableChange: (tableId: TableId) => void;
+  // onTableChange: (tableId: TableId) => void;
 }
 
 interface TableLoaderProps {
@@ -47,8 +47,7 @@ interface StateProps {
   tableState: TableId;
 }
 
-interface DispatchProps {
-  // onTableChange: (tableId: TableId) => void;
+interface DispatchProps {  
   onSubmitQuery: (
     databaseId: DatabaseId,
     query: string,
@@ -69,15 +68,16 @@ const mapStateToProps = (
   user: getUser(state),
   databases: databases.filter(canUseMetabotOnDatabase),
   tables: tables,
-  tableState: getInitialTable(state),
+  tableState: getTable(state),
 });
 
-const mapDispatchToProps = (dispatch: Dispatch): DispatchProps => ({
-  // onTableChange: tableId => dispatch(updateInitialTable(tableId)),
+const mapDispatchToProps = (dispatch: Dispatch): DispatchProps => ({  
   onSubmitQuery: (databaseId, prompt, tableId) => {
-    dispatch(updateInitialTable(tableId));
+    // dispatch(updateInitialTable(tableId));
     dispatch(
-      push({ pathname: Urls.databaseMetabot(databaseId), query: { prompt } }),
+      push({ pathname: Urls.databaseMetabot(databaseId), 
+             query: { prompt },
+             state: { tableId: tableId } }),
     );
   },
 });
@@ -89,23 +89,26 @@ const MetabotWidget = ({
   user,
   tableState,
   onSubmitQuery,
+  // onTableChange,
 }: // onTableChange,
-MetabotWidgetProps) => {
-  // console.log("------tables---------");
-  // console.log(tableState);
-  // console.log(tables[0].display_name);
+MetabotWidgetProps) => {  
 
-  const selectedDb: Database[] = databases.filter(e => e.id === 39);
+  const selectedDb: Database[] = databases.filter(e => e.id === 2);
 
   const initialTableId = tables[0].id;
 
   const initialDatabaseId =
-    model?.databaseId ?? databases.filter(e => e.id === 39)[0].id;
+    model?.databaseId ?? databases.filter(e => e.id === 2)[0].id;
   const [databaseId, setDatabaseId] = useState(initialDatabaseId);
   const [tableId, setTableId] = useState(initialTableId);
   // const tableId = tableState || tables[0].id;
+  // const [selectedTable, setSeletectedTable] = useState(tableId);
   const [prompt, setPrompt] = useState("");
-  const handleSubmitPrompt = () => onSubmitQuery(databaseId, prompt, tableId);
+
+  const handleSubmitPrompt = () => {
+    // onTableChange(selectedTable);
+    onSubmitQuery(databaseId, prompt, tableId)
+  };
 
   return (
     <MetabotHeader>
@@ -117,7 +120,7 @@ MetabotWidgetProps) => {
               key="picker"
               databases={selectedDb}
               selectedDatabaseId={databaseId}
-              onChange={setDatabaseId}
+              onChange={setTableId}
             />
           )} database right now. 
           You can select a Fact ${(
@@ -172,7 +175,7 @@ export default _.compose(
   Databases.loadList(),
   Tables.loadList({
     query: (state: State, props: TableLoaderProps) => ({
-      dbId: 39,
+      dbId: 2,
       schemaName: "dwh_fitness_mart",
     }),
     listName: "tables",

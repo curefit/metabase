@@ -4,7 +4,7 @@ import { LocationDescriptorObject } from "history";
 import { checkNotNull } from "metabase/core/utils/types";
 import { extractEntityId } from "metabase/lib/urls";
 import Questions from "metabase/entities/questions";
-import { CardId } from "metabase-types/api";
+import { CardId, TableId } from "metabase-types/api";
 import { MetabotEntityType, State } from "metabase-types/store";
 import Question from "metabase-lib/Question";
 import Metabot from "../../components/Metabot";
@@ -26,6 +26,7 @@ interface StateProps {
   entityId: CardId;
   entityType: MetabotEntityType;
   initialPrompt?: string;
+  initialTableId?: TableId;
 }
 
 const mapStateToProps = (
@@ -38,6 +39,7 @@ const mapStateToProps = (
     entityId,
     entityType: "model",
     initialPrompt: location?.query?.prompt,
+    initialTableId: location?.state?.tableId,
   };
 };
 

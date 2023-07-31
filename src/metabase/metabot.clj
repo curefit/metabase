@@ -68,21 +68,21 @@
 
 (defn get-watson-query [sql ddl]
   (try
-    (let [url (str (config/config-str :mb-watson-backend) "api/v1/query_validator ")
+    (let [url (str (config/config-str :mb-watson-backend) "api/v1/query_validator")
           request-body {:query sql :ddl ddl :engine "trino"}]
       (println "API URL:" url)
-      (println "Request Body:" request-body)
+      (println (json/generate-string request-body))
 
       (let [response (client/post url
                                   {:body (json/generate-string request-body)
                                    :content-type :json
-                                   :socket-timeout 2000
-                                   :conn-timeout 2000
-                                   :conn-request-timeout 2000})]
-        (println "==================================")
-        (println (json/parse-string (:body response)))
-        (println (:output (json/parse-string (:body response))))
-        (:output (json/parse-string (:body response)))))
+                                   :socket-timeout 10000
+                                   :conn-timeout 10000
+                                   :conn-request-timeout 10000})]
+        (println "============watson response===============")
+        (println (json/parse-string (:body response))
+        (println (get-in (json/parse-string (:body response)) ["output"]))
+        (get-in (json/parse-string (:body response)) ["output"])))
     (catch java.net.SocketTimeoutException e
       (println "Error: Request timed out")
       nil)

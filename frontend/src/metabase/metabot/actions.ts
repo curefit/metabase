@@ -4,7 +4,7 @@ import {
   runQuestionQuery as apiRunQuestionQuery,
 } from "metabase/services";
 import { closeNavbar } from "metabase/redux/app";
-import { MetabotFeedbackType } from "metabase-types/api";
+import { MetabotFeedbackType, TableId } from "metabase-types/api";
 import {
   Dispatch,
   GetState,
@@ -33,7 +33,6 @@ import {
   trackMetabotFeedbackReceived,
   trackMetabotQueryRun,
 } from "./analytics";
-import { entityId } from "./reducers";
 
 const trackQueryRun = (
   state: State,
@@ -57,14 +56,16 @@ export interface InitPayload {
   entityId: MetabotEntityId;
   entityType: MetabotEntityType;
   initialPrompt?: string;
+  initialTableId?: TableId;
 }
 
 export const INIT = "metabase/metabot/INIT";
-export const init = (payload: InitPayload) => (dispatch: Dispatch) => {
+export const init = (payload: InitPayload) => (dispatch: Dispatch, getState: GetState) => {
   dispatch({ type: INIT, payload });
   dispatch(closeNavbar());
 
   if (payload.initialPrompt) {
+    dispatch(updateTable(payload.initialTableId));
     dispatch(runPromptQuery());
   }
 };

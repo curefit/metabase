@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { connect } from "react-redux";
 import { MetabotEntityId, MetabotEntityType } from "metabase-types/store";
+import { TableId } from "metabase-types/api";
 import Question from "metabase-lib/Question";
 import Database from "metabase-lib/metadata/Database";
 import Table from "metabase-lib/metadata/Table";
@@ -16,6 +17,7 @@ interface OwnProps {
   model?: Question;
   database?: Database;
   databases?: Database[];
+  initialTableId: TableId;
   table?: Table;
   tables?: Table[];
 }
@@ -36,6 +38,7 @@ const Metabot = ({
   entityId,
   entityType,
   initialPrompt,
+  initialTableId,
   model,
   database,
   databases,
@@ -45,7 +48,7 @@ const Metabot = ({
   onReset,
 }: MetabotProps) => {
   useEffect(() => {
-    onInit({ entityId, entityType, initialPrompt });
+    onInit({ entityId, entityType, initialPrompt, initialTableId });
     return () => onReset();
   }, [entityId, entityType, initialPrompt, onInit, onReset]);
 

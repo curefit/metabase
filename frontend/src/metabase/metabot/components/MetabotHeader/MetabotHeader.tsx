@@ -17,6 +17,7 @@ import Table from "metabase-lib/metadata/Table";
 import {
   cancelQuery,
   runPromptQuery,
+  updateInitialTable,
   updatePrompt,
   updateTable,
 } from "../../actions";
@@ -68,7 +69,7 @@ const mapStateToProps = (state: State): StateProps => ({
 });
 
 const mapDispatchToProps = (dispatch: Dispatch): DispatchProps => ({
-  onChangePrompt: prompt => dispatch(updatePrompt(prompt)),
+  onChangePrompt: prompt => dispatch(updatePrompt(prompt)),  
   onSubmitPrompt: () => dispatch(runPromptQuery()),
   onDatabaseChange: databaseId => push(Urls.databaseMetabot(databaseId)),
   onCancel: () => dispatch(cancelQuery()),
@@ -199,14 +200,14 @@ const getDatabaseTitle = (
 
   const databasePicker = (
     <DatabasePicker
-      databases={databases.filter(e => e.id === 39)}
+      databases={databases.filter(e => e.id === 2)}
       selectedDatabaseId={database.id}
       onChange={onDatabaseChange}
     />
   );
   const tablePicker = (
     <DatabaseTablePicker
-      databases={databases.filter(e => e.id === 39)}
+      databases={databases.filter(e => e.id === 2)}
       table={tables}
       selectedDatabaseId={database.id}
       selectedTableId={tableId}

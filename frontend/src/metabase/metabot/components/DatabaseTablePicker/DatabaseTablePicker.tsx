@@ -31,7 +31,7 @@ const DatabaseTablePicker = ({
     <DatabaseSchemaAndTableDataSelector
       triggerClasses="inline"
       triggerElement={<Button onlyText>{label}</Button>}
-      databases={databases.filter(e => e.id === 39)}
+      databases={databases.filter(e => e.id === 2)}
       selectedDatabaseId={selectedDatabase?.id}
       selectedSchema={schema}
       selectedTableId={selectedTableId}

@@ -37,6 +37,7 @@ interface StateProps {
   databases: Database[];
   tables: Table[];
   initialPrompt?: string;
+  initialTableId?: TableId;
 }
 
 const mapStateToProps = (
@@ -57,6 +58,7 @@ const mapStateToProps = (
     databases: databases.filter(canUseMetabotOnDatabase),
     tables: tables,
     initialPrompt: location?.query?.prompt,
+    initialTableId: location?.state?.tableId,
   };
 };
 
@@ -70,7 +72,7 @@ export default _.compose(
   Databases.loadList(),
   Tables.loadList({
     query: (state: State, props: TableLoaderProps) => ({
-      dbId: 39,
+      dbId: 2,
       schemaName: "dwh_fitness_mart",
     }),
     listName: "tables",
