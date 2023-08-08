@@ -50,6 +50,10 @@
    :mb-garuda-backend      "http://dataplatform-garuda.production.cure.fit.internal/"
    :mb-watson-backend      "http://watson.alpha.cure.fit.internal/"
    :mb-prompt-file-path    "/Users/abhishek.gedela/templates.json"
+   :mb-embedding-threshold    "0.02"
+   :mb-embedding-memoization  "86400"
+   :mb-prompt-memoization     "86400"
+   :mb-metabot-group-name     "Metabot"
    })
 
 ;; separate map for EE stuff so merge conflicts aren't annoying.

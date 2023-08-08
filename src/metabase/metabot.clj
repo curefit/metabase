@@ -68,27 +68,25 @@
 
 (defn get-watson-query [sql ddl]
   (try
-    (let [url (str (config/config-str :mb-watson-backend) "api/v1/query_validator")
+    (let [url (str (config/config-str :mb-watson-backend) "api/v1/query_validator ")
           request-body {:query sql :ddl ddl :engine "trino"}]
+      (println "==============Watson API Call===============")
       (println "API URL:" url)
-      (println (json/generate-string request-body))
 
       (let [response (client/post url
                                   {:body (json/generate-string request-body)
                                    :content-type :json
-                                   :socket-timeout 10000
-                                   :conn-timeout 10000
-                                   :conn-request-timeout 10000})]
-        (println "============watson response===============")
-        (println (json/parse-string (:body response))
-        (println (get-in (json/parse-string (:body response)) ["output"]))
+                                   :socket-timeout 20000
+                                   :conn-timeout 20000
+                                   :conn-request-timeout 20000})]
+        (println (json/parse-string (:body response)))
         (get-in (json/parse-string (:body response)) ["output"])))
     (catch java.net.SocketTimeoutException e
       (println "Error: Request timed out")
-      nil)
+      sql)
     (catch Throwable e
       (println "Error occurred while calling API: " (.getMessage e))
-      nil)))
+      sql)))
 
 (defn infer-db-native-sql-query
   "Given a database and user prompt, determine a sql query to answer my question."
@@ -98,20 +96,37 @@
    table_id]
   (log/infof "Metabot is inferring sql for database '%s' with prompt '%s'." database-id user_prompt)
   (if (metabot-settings/is-metabot-enabled)
-    (let [prompt-objects (->> (t2/select Table {:select [:t.name :t.schema :t.id]
-                                                :from [[:metabase_table :t]]
-                                                :where [:or [:= :t.id table_id] [:like :name "%%_dim%%"]]})
-                           ;(t2/select [Table :name :schema :id] :db_id database-id
-                           ;              :id table_id
-                           ;              :name [:like "%_dim%"]
-                           ;              :schema schema_name :active true :visibility_type nil)
+    (let [tables         (t2/select Table {:union-all [{:select [:t.name :t.schema :t.id :t.db_id]
+                                                        :from [[:metabase_table :t]]
+                                                        :where [:and [:= :t.id table_id]
+                                                                [:= :active true]
+                                                                [:= :visibility_type nil]]}
+                                                       {:select [:mt2.name :mt2.schema :mt2.id :mt2.db_id]
+                                                        :from [[:metabase_table :mt]]
+                                                        :join [[:metabase_field :mf] [:= :mf.table_id :mt.id]
+                                                               [:metabase_field :mf2] [:= :mf.fk_target_field_id :mf2.id]
+                                                               [:metabase_table :mt2] [:= :mt2.id :mf2.table_id]]
+                                                        :where [:and [:= :mt.id table_id]
+                                                                [:= :mt.active true]
+                                                                [:= :mt.visibility_type nil]]
+                                                        }]})
+          prompt-objects (->> tables
                               (map metabot-util/memoized-create-table-embedding)
-                              (filter identity))
+                              (filter identity)
+                              distinct)
+          metric-prompt-objects (->> prompt-objects
+                                    (map metabot-util/memoized-metrics-embedding)
+                                    (mapcat identity))
+          segment-prompt-objects (->> prompt-objects
+                                     (map metabot-util/memoized-segments-embedding)
+                                      (mapcat identity))
           ddl            (metabot-util/generate-prompt prompt-objects user_prompt)
+          metrics        (metabot-util/generate-prompt metric-prompt-objects user_prompt)
+          segments       (metabot-util/generate-prompt segment-prompt-objects user_prompt)
           context        (assoc-in context [:database :create_database_ddl] ddl)
+          context        (assoc-in context [:database :metrics] metrics)
+          context        (assoc-in context [:database :segments] segments)
           {:keys [prompt_template version] :as prompt} (metabot-util/create-prompt context)]
-      (println "============generate prompt==============")
-      (println ddl)
       (if-some [sql (metabot-util/find-result
                       metabot-util/extract-sql
                       (metabot-client/invoke-metabot prompt))]

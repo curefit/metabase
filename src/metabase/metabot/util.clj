@@ -5,6 +5,7 @@
    [cheshire.core :as json]
    [clojure.core.memoize :as memoize]
    [clojure.string :as str]
+   [clojure.math :as Math]
    [honey.sql :as sql]
    [metabase.config :as config]
    [metabase.db.query :as mdb.query]
@@ -13,6 +14,7 @@
    [metabase.metabot.settings :as metabot-settings]
    [metabase.models :refer [Card Field FieldValues Table]]
    [metabase.models.metric :refer [Metric]]
+   [metabase.models.segment :refer [Segment]]
    [metabase.query-processor :as qp]
    [metabase.query-processor.reducible :as qp.reducible]
    [metabase.query-processor.util.add-alias-info :as add]
@@ -221,9 +223,10 @@
 (defn- field->pseudo-enums
   "For a field, create a potential enumerated type string.
   Returns nil if there are no field values or the cardinality is too high."
-  ([{table-name :name} {field-name :name field-id :id :keys [semantic_type]} enum-cardinality-threshold]
+  ([{table-name :name} {field-name :name field-id :id :keys [semantic_type active]} enum-cardinality-threshold]
    (when-let [values (and
                       (= :type/Category semantic_type)
+                      (= true active)
                       (t2/select-one-fn :values FieldValues :field_id field-id))]
      (when (<= (count values) enum-cardinality-threshold)
        (let [ddl-str (format "create type %s_%s_t as enum %s;"
@@ -244,7 +247,7 @@
   "Create an 'approximate' ddl to represent how this table might be created as SQL.
   This can be very expensive if performed over an entire database, so memoization is recommended.
   Memoization currently happens in create-table-embedding."
-  ([{table-name :name schema-name :schema table-id :id :as table} enum-cardinality-threshold]
+  ([{table-name :name schema-name :schema table-id :id db-id :db_id :as table} enum-cardinality-threshold]
    (let [fields       (t2/select [Field
                                   :base_type
                                   :database_required
@@ -253,8 +256,9 @@
                                   :id
                                   :name
                                   :description
+                                  :active
                                   :semantic_type]
-                        :table_id table-id)
+                        :table_id table-id :active true)
          enums        (reduce
                        (fn [acc {field-name :name :as field}]
                          (if-some [enums (field->pseudo-enums table field enum-cardinality-threshold)]
@@ -262,17 +266,12 @@
                            acc))
                        {}
                        fields)
-         metrics-data (t2/select [Metric :name :description] :table_id table-id)
-         metrics-str  (->> metrics-data
-                           (map (fn [{:keys [name description]}]
-                                  (str "metric_name: " name ", metric_description: " description)))
-                           (clojure.string/join "\n"))
          columns      (vec
                        (for [{column-name :name :keys [database_required database_type description]} fields]
                          (cond-> [column-name
                                   (if (enums column-name)
-                                    (format "%s_%s_t" table-name column-name)
-                                    database_type)
+                                    (format "%s" database_type "%s_%s_t" table-name column-name)
+                                    (format "%s" database_type "%s" ""))
                                   (if (not= description nil)
                                     (format "column description: %s" description)
                                     (format "%s" ""))]
@@ -302,8 +301,7 @@
                        first
                        mdb.query/format-sql)
          ddl-str      (str/join "\n\n" (conj (vec (vals enums)) create-sql))
-         complete-ddl (str ddl-str "\n\n" metrics-str)
-         nchars       (count complete-ddl)]
+         nchars       (count ddl-str)]
      (log/debugf "Pseudo-ddl for table '%s.%s'(%s) describes %s fields, %s enums, and contains %s chars (~%s tokens)."
                  schema-name
                  table-name
@@ -312,7 +310,7 @@
                  (count enums)
                  nchars
                  (quot nchars 4))
-     complete-ddl))
+     ddl-str))
   ([table]
    (table->pseudo-ddl table (metabot-settings/enum-cardinality-threshold))))
 
@@ -345,7 +343,7 @@
   Anything so large (the table name, column names, and base column types have to exceed the token limit) is probably
   going to be problematic and a model would be a better fit anyways.
   "
-  ([{table-name :name table-id :id :as table} enum-cardinality-threshold]
+  ([{table-name :name table-id :id db_id :db_id :as table} enum-cardinality-threshold]
    (log/debugf
     "Creating embedding for table '%s'(%s) with cardinality threshold '%s'."
     table-name
@@ -356,7 +354,9 @@
            {:keys [prompt embedding tokens]} (metabot-client/create-embedding ddl)]
        {:prompt    prompt
         :embedding embedding
-        :tokens    tokens})
+        :tokens    tokens
+        :table_id  table-id
+        :db_id     db_id})
      ;; The most likely case of throwing here is that the ddl is too big.
      ;; When this happens, we'll try again with 1/2 the cardinality selected.
      ;; This will reduce the number of fields that become enumerated.
@@ -403,7 +403,120 @@
                          [table-id enum-cardinality-threshold])}
    create-table-embedding
     ;; 24-hour ttl
-   :ttl/threshold (* 1000 60 60 24)))
+   :ttl/threshold (* 1000 (config/config-int :mb-embedding-memoization))))
+
+(defn metric->ddl
+  "Create a single metric DDL."
+  [metric table-id db-id]
+  (let [metric-ddl (str "metric_name: " (:name metric) ", metric_description: " (:description metric) ", metric_reference_query: "
+                        (:query (qp/compile-and-splice-parameters {:database db-id
+                                                                   :query {:source-table table-id
+                                                                           :aggregation [[:metric (:id metric)]]
+                                                                           }
+                                                                   :type "query"
+                                                                   :parameters []})))]
+    metric-ddl))
+
+(defn table->metrics-ddls
+  "Create individual metric DDLs for the given table."
+  [table]
+  (let [table-id (:table_id table)
+        db-id (:db_id table)
+        metrics-data (t2/select [Metric :id :name :description] :table_id table-id)]
+    (map #(metric->ddl % table-id db-id) metrics-data)))
+
+(defn create-metrics-embedding
+  ([{table-id :table_id :as table}]
+   (log/debugf
+     "Creating embeddings for table (%s)."
+     table-id)
+   (try
+     (let [metric-ddls (table->metrics-ddls table)]
+       (let [result-map (map (fn [metric-ddl]
+                            (let [{:keys [prompt embedding tokens]} (metabot-client/create-embedding metric-ddl)]
+                              {:prompt prompt
+                               :embedding embedding
+                               :tokens tokens}))
+                             metric-ddls)]
+         result-map))
+     (catch Exception e
+       (log/warnf
+         (str/join
+           " "
+           ["Embeddings for metrics of table (%s) could not be generated."
+            "It could be that this table has too many columns."
+            "You might want to create a model for this table instead."
+            "Error message: %s"])
+         table-id
+         e)))))
+
+
+(def memoized-metrics-embedding
+  "Memoized version of create-table-embedding. Generally embeddings are small, so this is a reasonable tradeoff,
+  especially when the number of tables in a db is large.
+  Should probably have the same threshold as metabot-client/memoized-create-embedding."
+  (memoize/ttl
+    ^{::memoize/args-fn (fn [[{table-id :id}]]
+                          [table-id])}
+    create-metrics-embedding
+    ;; 24-hour ttl
+    :ttl/threshold (* 1000 (config/config-int :mb-embedding-memoization))))
+
+(defn segment->ddl
+  "Create a single metric DDL."
+  [segment table-id db-id]
+  (let [segment-ddl (str "segment_name: " (:name segment) ", segment_description: " (:description segment) ", metric_reference_query: "
+                         (clojure.string/replace-first (:query (qp/compile-and-splice-parameters {:type "query",
+                                                                                                  :query {
+                                                                                                          :source-table table-id,
+                                                                                                          :filter ["segment" (:id segment)]},
+                                                                                                  :database db-id,
+                                                                                                  :parameters []})) #"(?i)SELECT.*?FROM" "SELECT * FROM"))]
+    segment-ddl))
+
+(defn table->segments-ddls
+  "Create individual metric DDLs for the given table."
+  [table]
+  (let [table-id (:table_id table)
+        db-id (:db_id table)
+        segments-data (t2/select [Segment :id :name :description] :table_id table-id)]
+    (map #(segment->ddl % table-id db-id) segments-data)))
+
+(defn create-segments-embedding
+  ([{table-id :table_id :as table} ]
+   (log/debugf
+     "Creating embedding for table (%s)."
+     table-id)
+   (try
+     (let [segments-ddls (table->segments-ddls table)]
+       (let [result-map (map (fn [segment-ddl]
+                               (let [{:keys [prompt embedding tokens]} (metabot-client/create-embedding segment-ddl)]
+                                 {:prompt prompt
+                                  :embedding embedding
+                                  :tokens tokens}))
+                             segments-ddls)]
+         result-map))
+     (catch Exception e
+       (log/warnf
+         (str/join
+           " "
+           ["Embeddings for metrics of table (%s) could not be generated."
+            "It could be that this table has too many columns."
+            "You might want to create a model for this table instead."
+            "Error message: %s"])
+         table-id
+         e)))))
+
+(def memoized-segments-embedding
+  "Memoized version of create-table-embedding. Generally embeddings are small, so this is a reasonable tradeoff,
+  especially when the number of tables in a db is large.
+  Should probably have the same threshold as metabot-client/memoized-create-embedding."
+  (memoize/ttl
+    ^{::memoize/args-fn (fn [[{table-id :id}]]
+                          [table-id])}
+    create-segments-embedding
+    ;; 24-hour ttl
+    :ttl/threshold (* 1000 (config/config-int :mb-embedding-memoization))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Prompt Input ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -446,22 +559,19 @@
   (memoize/ttl
    default-prompt-templates
     ;; Check for updates every hour
-   :ttl/threshold (* 1000 60 60)))
+   :ttl/threshold (* 1000 (config/config-int :mb-prompt-memoization))))
 
 (defn create-prompt
   "Create a prompt by looking up the latest template for the prompt_task type
    of the context interpolating all values from the template. The returned
    value is the template object with the prompt contained in the ':prompt' key."
   [{:keys [prompt_task] :as context}]
-  (println (get-in (*prompt-templates*) [prompt_task :latest]))
   (if-some [{:keys [messages] :as template} (get-in (*prompt-templates*) [prompt_task :latest])]
     (let [prompt (assoc template
                         :message_templates messages
                         :messages (prompt-template->messages template context))]
       (let [nchars (count (mapcat :content messages))]
         (log/debugf "Prompt running with %s chars (~%s tokens)." nchars (quot nchars 4)))
-      (println "-----------final prompt---------------")
-      (println prompt)
       prompt)
     (throw
      (ex-info
@@ -534,35 +644,64 @@
         {prompt-embedding :embedding} (metabot-client/create-embedding user-prompt)]
     (map
      (fn [{:keys [embedding] :as prompt-object}]
-       (assoc prompt-object
-              :user_prompt user-prompt
-              :prompt_match (dot prompt-embedding embedding)))
+       (let [prompt-match (dot prompt-embedding embedding)]
+         (assoc prompt-object
+           :user_prompt user-prompt
+           :prompt_match prompt-match
+           )))
      prompt-objects)))
+
+;(defn score-prompt-embeddings
+;  "Given a set of 'prompt objects' (a seq of items with keys :embedding :tokens :prompt),
+;  and a prompt will add the :prompt and :prompt_match to each object."
+;  [prompt-objects user-prompt]
+;  (let [cosine-similarity (fn cosine-similarity [a b]
+;                            (let [dot-product (reduce + (map * a b))
+;                                  norm-a (Math/sqrt (reduce + (map #(* % %) a)))
+;                                  norm-b (Math/sqrt (reduce + (map #(* % %) b)))]
+;                              (/ dot-product (* norm-a norm-b))))
+;        {prompt-embedding :embedding} (metabot-client/create-embedding user-prompt)]
+;    (map
+;      (fn [{:keys [embedding] :as prompt-object}]
+;        (let [prompt-match (cosine-similarity prompt-embedding embedding)]
+;          (assoc prompt-object
+;            :user_prompt user-prompt
+;            ;:prompt_match (if (= prompt-match 0) 0.009 prompt-match)
+;            :prompt_match prompt-match
+;            )))
+;      prompt-objects)))
+
+
+(defn best-prompt-object
+  "Given a set of 'prompt objects' (a seq of items with keys :embedding :tokens :prompt),
+  will return the item that best matches the input prompt."
+  ([prompt-objects prompt]
+   (let [scored-objects (score-prompt-embeddings prompt-objects prompt)]
+     (some->> scored-objects
+              (filter (complement nil?))
+              seq
+              (apply max-key :prompt_match)))))
+
 
 (defn generate-prompt
   "Given a set of 'prompt objects' (a seq of items with keys :embedding :tokens :prompt),
   will determine the set of prompts that best match the given prompt whose token sum
   does not exceed the token limit."
   ([prompt-objects prompt token-limit]
-   (->> (score-prompt-embeddings prompt-objects prompt)
-        (sort-by (comp - :prompt_match))
-        (reduce
-         (fn [{:keys [total-tokens] :as acc} {:keys [prompt tokens]}]
-           (if (> (+ tokens total-tokens) token-limit)
-             (reduced acc)
-             (-> acc
-                 (update :total-tokens + tokens)
-                 (update :prompts conj prompt))))
-         {:total-tokens 0 :prompts []})
-        :prompts
-        (str/join "\n")))
+   (let [score                 (score-prompt-embeddings prompt-objects prompt)
+         sorted-prompt-objects (->> score
+                                    (sort-by (comp - :prompt_match)))]
+     (doseq [prompt-object sorted-prompt-objects]
+       (println (:table_id prompt-object))
+       (println "Prompt Match:" (:prompt_match prompt-object)))
+     (let [first-prompt-object (first sorted-prompt-objects)
+           threshold-distance (Double. (config/config-str :mb-embedding-threshold))
+           similar-prompt-objects (filter #(<= (- (:prompt_match first-prompt-object) (:prompt_match %)) threshold-distance) sorted-prompt-objects)
+           selected-prompts (distinct (conj (mapv :prompt similar-prompt-objects) (:prompt first-prompt-object)))]
+       (str/join "\n" selected-prompts))))
   ([prompt-objects prompt]
-   (generate-prompt prompt-objects prompt (metabot-settings/metabot-prompt-generator-token-limit))))
+   (generate-prompt prompt-objects prompt 16000)))
 
-(defn best-prompt-object
-  "Given a set of 'prompt objects' (a seq of items with keys :embedding :tokens :prompt),
-  will return the item that best matches the input prompt."
-  ([prompt-objects prompt]
-   (some->> (score-prompt-embeddings prompt-objects prompt)
-            seq
-            (apply max-key :prompt_match))))
+
+
+

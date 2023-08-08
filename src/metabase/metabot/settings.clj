@@ -8,9 +8,9 @@
    [wkok.openai-clojure.api :as openai.api]))
 
 (defsetting openai-model
-  (deferred-tru "The OpenAI Model (e.g. 'gpt-4', 'gpt-3.5-turbo')")
+  (deferred-tru "The OpenAI Model (e.g. 'gpt-4', 'gpt-3.5-turbo-16k-0613')")
   :visibility :settings-manager
-  :default "gpt-4")
+  :default "gpt-3.5-turbo-16k")
 
 (defsetting openai-api-key
   (deferred-tru "The OpenAI API Key.")
@@ -116,4 +116,4 @@
   (deferred-tru "When attempting to assemble prompts, the threshold at which prompt will no longer be appended to.")
   :type :integer
   :visibility :internal
-  :default 6000)
+  :default 16000)

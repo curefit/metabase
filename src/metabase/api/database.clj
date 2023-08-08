@@ -435,7 +435,9 @@
 
 (defn get-data-lag [table-name schema-name]
   (try
-    (let [url (str (config/config-str :mb-garuda-backend) "api/v1/metadata")
+    (let [
+          ;url (str "http://127.0.0.1:5000/api/v1/metadata")
+          url (str (config/config-str :mb-garuda-backend) "api/v1/metadata")
           request-body {:tableName table-name :schemaName schema-name}]
       (println "API URL:" url)
       (println "Request Body:" request-body)
@@ -443,10 +445,10 @@
       (let [response (client/post url
                                   {:body (json/generate-string request-body)
                                    :content-type :json
-                                   :socket-timeout 2000
-                                   :conn-timeout 2000
-                                   :conn-request-timeout 2000})]
-        (println "==================================")
+                                   :socket-timeout 10000
+                                   :conn-timeout 10000
+                                   :conn-request-timeout 10000})]
+        (println "API Response:")
         (println (json/parse-string (:body response)))
         (json/parse-string (:body response))))
     (catch java.net.SocketTimeoutException e
@@ -481,10 +483,11 @@
                             tables)))
         (update :tables (fn [tables]
                           (for [table tables]
-                            (-> table
-                                (update :latest_sync_timestamp (get-data-lag (:name table) (:schema table)))
+                            (let [lag-data (get-data-lag (:name table) (:schema table))]
+                             (-> table
+                                 (assoc :latest_sync_timestamp lag-data)
                                 (update :segments (partial filter mi/can-read?))
-                                (update :metrics  (partial filter mi/can-read?)))))))))
+                                (update :metrics  (partial filter mi/can-read?))))))))))
 
 (defn- db-metadata-schema [id include-hidden? include-editable-data-model? schema_name]
   (let [db (-> (if include-editable-data-model?
@@ -512,10 +515,11 @@
                             tables)))
         (update :tables (fn [tables]
                           (for [table tables]
-                            (-> table
-                                (update :latest_sync_timestamp (get-data-lag (:name table) (:schema table)))
-                                (update :segments (partial filter mi/can-read?))
-                                (update :metrics  (partial filter mi/can-read?)))))))))
+                            (let [lag-data (get-data-lag (:name table) (:schema table))]
+                              (-> table
+                                  (assoc :latest_sync_timestamp lag-data)
+                                  (update :segments (partial filter mi/can-read?))
+                                  (update :metrics  (partial filter mi/can-read?))))))))))
 
 #_{:clj-kondo/ignore [:deprecated-var]}
 (api/defendpoint-schema GET "/:id/metadata"

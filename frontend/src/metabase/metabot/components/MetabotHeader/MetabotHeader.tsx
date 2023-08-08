@@ -196,6 +196,7 @@ const getDatabaseTitle = (
 
   // console.log(tableState);
 
+  const schema = "dwh_fitness_mart";
   const tableId = tableState || tables[0].id;
 
   const databasePicker = (
@@ -209,6 +210,7 @@ const getDatabaseTitle = (
     <DatabaseTablePicker
       databases={databases.filter(e => e.id === 2)}
       table={tables}
+      selectedSchema={schema}
       selectedDatabaseId={database.id}
       selectedTableId={tableId}
       onChange={onTableChange}

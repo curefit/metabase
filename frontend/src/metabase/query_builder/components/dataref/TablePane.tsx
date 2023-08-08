@@ -30,6 +30,10 @@ const mapStateToProps = (state: State, props: TablePaneProps) => ({
 });
 
 const TablePane = ({ table, onItemClick, onBack, onClose }: TablePaneProps) => {
+
+  console.log("------in table pane----------");
+  console.log(table.latest_sync_timestamp);
+
   return (
     <SidebarContent
       title={table.name}
@@ -46,14 +50,14 @@ const TablePane = ({ table, onItemClick, onBack, onClose }: TablePaneProps) => {
               <EmptyDescription>{t`No description`}</EmptyDescription>
             )}
           </div>
-          <div className="my2">
+          {/* <div className="my2">
             {table.latest_sync_timestamp ? (
               <DataLag
                 latest_sync_timestamp={table.latest_sync_timestamp}
                 onDataLagClick={f => onItemClick("dataLag", f)}
               />
             ) : null}
-          </div>
+          </div> */}
           <div className="my2">
             {table.fields.length ? (
               <>

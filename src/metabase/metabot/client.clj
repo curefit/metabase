@@ -21,6 +21,11 @@
            (let [{:keys [body]} (ex-data e)
                  {:keys [error]} (json/parse-string body keyword)
                  {error-type :type :keys [message code]} error]
+             (println "---openai status----")
+             (println error-type)
+             (println message)
+             (println code)
+             (println status)
              (case (int status)
                400 (do
                      (log/warnf "%s: %s" code message)
@@ -56,9 +61,12 @@
 (defn- default-chat-completion-endpoint
   "OpenAI is the default completion endpoint"
   [params options]
-  (openai.api/create-chat-completion
-   (select-keys params [:model :n :messages])
-   options))
+  (let [open-ai-response (openai.api/create-chat-completion
+                            (select-keys params [:model :n :messages])
+                          options)]
+    (println "----open ai response------")
+    (println open-ai-response)
+    open-ai-response))
 
 (def ^:dynamic ^{:arglists '([params options])}
   *create-chat-completion-endpoint*
@@ -70,10 +78,14 @@
   Takes messages to be used as instructions and a function that will find the first valid result from the messages."
   [{:keys [messages] :as prompt}]
   {:pre [messages]}
+  (println "-----------final prompt call---------------")
+  (println prompt)
+  (println "-----------final prompt call end---------------")
   ((wrap-openai-exceptions *create-chat-completion-endpoint*)
    (merge
-    {:model (metabot-settings/openai-model)
-     :n     (metabot-settings/num-metabot-choices)}
+    {:model "gpt-3.5-turbo-16k"
+     :n     (metabot-settings/num-metabot-choices)
+     :temperature 0.02}
     prompt)
    {:api-key      (metabot-settings/openai-api-key)
     :organization (metabot-settings/openai-organization)}))

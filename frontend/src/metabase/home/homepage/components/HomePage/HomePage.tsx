@@ -5,6 +5,7 @@ import { canUseMetabotOnDatabase } from "metabase/metabot/utils";
 import { CollectionItem } from "metabase-types/api";
 import { useDispatch, useSelector } from "metabase/lib/redux";
 import {
+  getUser,
   getCustomHomePageDashboardId,
   getIsMetabotEnabled,
 } from "metabase/home/selectors";
@@ -41,6 +42,8 @@ const HomePage = ({ onOpenNavbar }: HomePageProps): JSX.Element => {
 
   const isMetabotEnabled = useSelector(getIsMetabotEnabled);
 
+  const hasBot = useSelector(getUser).has_access_to_metabot;
+
   const hasMetabot = getHasMetabot(
     databaseListState.data,
     modelListState.data,
@@ -54,7 +57,7 @@ const HomePage = ({ onOpenNavbar }: HomePageProps): JSX.Element => {
   }, [onOpenNavbar]);
 
   return (
-    <HomeLayout hasMetabot={true}>
+    <HomeLayout hasMetabot={hasBot}>
       <HomeContent />
     </HomeLayout>
   );

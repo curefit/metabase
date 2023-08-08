@@ -18,6 +18,11 @@ interface DataLagProps {
 }
 
 const DataLag = ({ latest_sync_timestamp, onDataLagClick }: DataLagProps) => {
+
+  console.log("===data lag====");
+  console.log(latest_sync_timestamp);
+
+
   if (latest_sync_timestamp.length === 1) {
     const dataLag = latest_sync_timestamp[0];
 
@@ -35,7 +40,7 @@ const DataLag = ({ latest_sync_timestamp, onDataLagClick }: DataLagProps) => {
             </tr>
             <tr>
               <th>{t`Synced Till`}</th>
-              <td>{new Date(dataLag.latest_sync_timestamp).toString()}</td>
+              <td>{new Date(dataLag.latest_sync_timestamp).toUTCString()}</td>
             </tr>
             <tr>
               <th>{t`Updated Till`}</th>

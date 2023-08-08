@@ -28,6 +28,7 @@ import { SQLBehaviour } from "metabase/lib/ace/sql_behaviour";
 import ExplicitSize from "metabase/components/ExplicitSize";
 import Modal from "metabase/components/Modal";
 import { getSetting } from "metabase/selectors/settings";
+import { getUser } from "metabase/selectors/user";
 import { canGenerateQueriesForDatabase } from "metabase/metabot/utils";
 
 import Databases from "metabase/entities/databases";
@@ -677,8 +678,9 @@ class NativeQueryEditor extends Component {
   }
 }
 
-const mapStateToProps = state => ({
-  canUsePromptInput: getSetting(state, "is-metabot-enabled"),
+const mapStateToProps = state => (
+{
+  canUsePromptInput: getSetting(state, "is-metabot-enabled") && getUser(state).has_access_to_metabot,
 });
 
 const mapDispatchToProps = dispatch => ({

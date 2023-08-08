@@ -24,6 +24,14 @@ export const getQuestion = createSelector(
   },
 );
 
+export const getCurrentUser = (state: State) => {
+  return state.currentUser;
+};
+
+export const getMetabotState = (state: State) => {
+  return state.metabot;
+};
+
 export const getPrompt = (state: State) => {
   return state.metabot.prompt;
 };

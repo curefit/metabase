@@ -15,6 +15,10 @@ interface DataLagPaneProps {
 }
 
 const DataLagPane = ({ onBack, onClose, dataLag }: DataLagPaneProps) => {
+
+  console.log("===data lag pane====");
+  console.log(dataLag);
+
   return (
     <SidebarContent
       title={dataLag.table_name}
@@ -32,7 +36,7 @@ const DataLagPane = ({ onBack, onClose, dataLag }: DataLagPaneProps) => {
             </tr>
             <tr>
               <th>{t`Synced Till`}</th>
-              <td>{new Date(dataLag.latest_sync_timestamp).toString()}</td>
+              <td>{new Date(dataLag.latest_sync_timestamp).toUTCString()}</td>
             </tr>
             <tr>
               <th>{t`Updated Till`}</th>

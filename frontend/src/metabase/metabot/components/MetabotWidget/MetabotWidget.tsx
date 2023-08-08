@@ -97,6 +97,8 @@ MetabotWidgetProps) => {
 
   const initialTableId = tables[0].id;
 
+  const schema = "dwh_fitness_mart";
+
   const initialDatabaseId =
     model?.databaseId ?? databases.filter(e => e.id === 2)[0].id;
   const [databaseId, setDatabaseId] = useState(initialDatabaseId);
@@ -120,12 +122,13 @@ MetabotWidgetProps) => {
               key="picker"
               databases={selectedDb}
               selectedDatabaseId={databaseId}
-              onChange={setTableId}
+              onChange={setDatabaseId}
             />
           )} database right now. 
           You can select a Fact ${(
             <DatabaseTablePicker
               databases={selectedDb}
+              selectedSchema={schema}
               table={tables}
               selectedTableId={tableId}
               onChange={setTableId}

@@ -19,7 +19,8 @@ import {
   getEntityId,
   getEntityType,
   getFeedbackType,
-  getInitialTable,
+  getCurrentUser,
+  getMetabotState,
   getIsQueryRunning,
   getNativeQueryText,
   getPrompt,
@@ -201,14 +202,22 @@ export const submitFeedback =
     const sql = getNativeQueryText(getState());
     const feedbackType = getFeedbackType(getState());
     const prompt_template_versions = getPromptTemplateVersions(getState());
+    const metabotState = getMetabotState(getState());
 
-    MetabotApi.sendFeedback({
+    if (metabotState.hasOwnProperty('queryResults')) {
+      delete metabotState['queryResults'];
+    }
+
+    MetabotApi.sendFeedback({"payload" : [{      
       entity_type: entityType,
       prompt,
       sql,
+      currentUser: getCurrentUser(getState()),
+      metabotState: getMetabotState(getState()),
       feedback_type: feedbackType,
       prompt_template_versions,
-    });
+      event_time: Date.now(),
+    }]});
 
     trackMetabotFeedbackReceived(
       entityType,

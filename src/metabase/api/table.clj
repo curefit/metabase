@@ -48,17 +48,22 @@
 
 (defn get-data-lag [table-name schema-name]
   (try
-    (let [url (str (config/config-str :mb-garuda-backend) "api/v1/metadata")
-          request-body {:tableName table-name :schemaName schema-name}]
+    (let [
+          ;url (str "http://127.0.0.1:5000/api/v1/metadata")
+          url (str (config/config-str :mb-garuda-backend) "api/v1/metadata")
+          request-body {:tableName table-name :schemaName schema-name}
+          ]
       (println "API URL:" url)
-      (println "Request Body:" request-body)
+      ;(println "Request Body:" request-body)
 
       (let [response (client/post url
                                   {:body (json/generate-string request-body)
                                    :content-type :json
-                                   :socket-timeout 2000
-                                   :conn-timeout 2000
-                                   :conn-request-timeout 2000})]
+                                   :socket-timeout 10000
+                                   :conn-timeout 10000
+                                   :conn-request-timeout 10000})]
+        (println "API Response:")
+        (println (json/parse-string (:body response)))
         (json/parse-string (:body response))))
     (catch java.net.SocketTimeoutException e
       (println "Error: Request timed out")

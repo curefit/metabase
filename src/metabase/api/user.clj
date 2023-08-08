@@ -1,29 +1,31 @@
 (ns metabase.api.user
   "/api/user endpoints"
   (:require
-   [compojure.core :refer [DELETE GET POST PUT]]
-   [honey.sql.helpers :as sql.helpers]
-   [java-time :as t]
-   [metabase.analytics.snowplow :as snowplow]
-   [metabase.api.common :as api]
-   [metabase.api.common.validation :as validation]
-   [metabase.api.ldap :as api.ldap]
-   [metabase.email.messages :as messages]
-   [metabase.integrations.google :as google]
-   [metabase.models.collection :as collection :refer [Collection]]
-   [metabase.models.login-history :refer [LoginHistory]]
-   [metabase.models.permissions-group :as perms-group]
-   [metabase.models.user :as user :refer [User]]
-   [metabase.plugins.classloader :as classloader]
-   [metabase.public-settings.premium-features :as premium-features]
-   [metabase.server.middleware.offset-paging :as mw.offset-paging]
-   [metabase.util :as u]
-   [metabase.util.i18n :refer [tru]]
-   [metabase.util.password :as u.password]
-   [metabase.util.schema :as su]
-   [schema.core :as s]
-   [toucan.db :as db]
-   [toucan.hydrate :refer [hydrate]]))
+    [compojure.core :refer [DELETE GET POST PUT]]
+    [honey.sql.helpers :as sql.helpers]
+    [java-time :as t]
+    [metabase.analytics.snowplow :as snowplow]
+    [metabase.api.common :as api]
+    [metabase.api.common.validation :as validation]
+    [metabase.api.ldap :as api.ldap]
+    [metabase.email.messages :as messages]
+    [metabase.integrations.google :as google]
+    [metabase.models.permissions-group-membership :refer [PermissionsGroupMembership]]
+    [metabase.models.collection :as collection :refer [Collection]]
+    [metabase.models.login-history :refer [LoginHistory]]
+    [metabase.models.permissions-group :as perms-group :refer [PermissionsGroup]]
+    [metabase.models.user :as user :refer [User]]
+    [metabase.plugins.classloader :as classloader]
+    [metabase.public-settings.premium-features :as premium-features]
+    [metabase.server.middleware.offset-paging :as mw.offset-paging]
+    [metabase.util :as u]
+    [metabase.util.i18n :refer [tru]]
+    [metabase.util.password :as u.password]
+    [metabase.util.schema :as su]
+    [schema.core :as s]
+    [toucan.db :as db]
+    [toucan.hydrate :refer [hydrate]]
+    [metabase.config :as config]))
 
 (set! *warn-on-reflection* true)
 
@@ -194,6 +196,19 @@
     (assoc user :sso_source (db/select-one-field :sso_source User :id id))
     user))
 
+(defn- add-is-part-of-metabot-group
+  "True if user is part of Metabot group"
+  [user]
+  (let [metabot-group-name (config/config-str :mb-metabot-group-name)
+        metabot_group_id (db/select-one-id PermissionsGroup :name metabot-group-name)
+        metabot-pgm-id   (db/select-one-id PermissionsGroupMembership
+                                            {:where
+                                             [:and
+                                              [:= :user_id (:id user)]
+                                              [:= :group_id metabot_group_id]]})]
+    (assoc user :has_access_to_metabot (some? metabot-pgm-id)))
+  )
+
 (defn- add-has-question-and-dashboard
   "True when the user has permissions for at least one un-archived question and one un-archived dashboard."
   [user]
@@ -221,6 +236,7 @@
   []
   (-> (api/check-404 @api/*current-user*)
       (hydrate :personal_collection_id :group_ids :is_installer :has_invited_second_user)
+      add-is-part-of-metabot-group
       add-has-question-and-dashboard
       add-first-login
       maybe-add-advanced-permissions
