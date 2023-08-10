@@ -58,6 +58,13 @@
    :placeholder  (deferred-tru "birds_of_the_world")
    :required     true})
 
+(def is-metabot-enabled
+  "Enable Metabot at DB level"
+  {:name         "metabot"
+   :display-name (deferred-tru "Enable Metabot for DB")
+   :type         :boolean
+   :default      false})
+
 (def default-ssl-details
   "Map of the db ssl details field, useful for `connection-properties` implementations"
   {:name         "ssl"
@@ -213,6 +220,7 @@
    :ssl                      default-ssl-details
    :user                     default-user-details
    :ssh-tunnel               ssh-tunnel-preferences
+   :is-metabot-enabled       is-metabot-enabled
    :additional-options       additional-options
    :advanced-options-start   advanced-options-start
    :default-advanced-options default-advanced-options})

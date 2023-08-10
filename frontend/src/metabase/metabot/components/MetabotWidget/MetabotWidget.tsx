@@ -19,13 +19,11 @@ import DatabasePicker from "../DatabasePicker";
 import MetabotMessage from "../MetabotMessage";
 import MetabotPrompt from "../MetabotPrompt";
 import DatabaseTablePicker from "../DatabaseTablePicker/DatabaseTablePicker";
-import { updateTable } from "../../actions";
 import { getInitialTable, getTable } from "../../selectors";
 import { MetabotHeader } from "./MetabotWidget.styled";
 
 interface DatabaseLoaderProps {
-  databases: Database[];
-  // onTableChange: (tableId: TableId) => void;
+  databases: Database[];  
 }
 
 interface TableLoaderProps {
@@ -93,16 +91,21 @@ const MetabotWidget = ({
 }: // onTableChange,
 MetabotWidgetProps) => {  
 
-  const selectedDb: Database[] = databases.filter(e => e.id === 2);
-
-  const initialTableId = tables[0].id;
-
-  const schema = "dwh_fitness_mart";
+  const selectedDb: Database[] = databases.filter(e => e.is_metabot_enabled === true);  
 
   const initialDatabaseId =
-    model?.databaseId ?? databases.filter(e => e.id === 2)[0].id;
+    model?.databaseId ?? databases.filter(e => e.is_metabot_enabled === true)[0].id;
+
+  const initialTableId = tables.filter(e => e.db_id === initialDatabaseId)[0].id;
+  
+
   const [databaseId, setDatabaseId] = useState(initialDatabaseId);
-  const [tableId, setTableId] = useState(initialTableId);
+  const [tableId, setTableId] = useState(initialTableId);  
+
+  const handleDatabaseChange = (newDatabaseId: number) => {    
+    setDatabaseId(newDatabaseId);        
+  };
+
   // const tableId = tableState || tables[0].id;
   // const [selectedTable, setSeletectedTable] = useState(tableId);
   const [prompt, setPrompt] = useState("");
@@ -122,14 +125,14 @@ MetabotWidgetProps) => {
               key="picker"
               databases={selectedDb}
               selectedDatabaseId={databaseId}
-              onChange={setDatabaseId}
+              onChange={handleDatabaseChange}
             />
           )} database right now. 
-          You can select a Fact ${(
+          You can choose ${(
             <DatabaseTablePicker
-              databases={selectedDb}
-              selectedSchema={schema}
-              table={tables}
+              databases={selectedDb}              
+              selectedDatabaseId={databaseId}
+              // table={tables}
               selectedTableId={tableId}
               onChange={setTableId}
             />
@@ -164,24 +167,12 @@ const getPromptPlaceholder = (model: Question | undefined) => {
 
 // eslint-disable-next-line import/no-default-export -- deprecated usage
 export default _.compose(
-  Search.loadList({
-    query: {
-      models: "dataset",
-      limit: 1,
-    },
-    listName: "models",
-  }),
-  Questions.load({
-    id: (state: State, { models }: SearchLoaderProps) => models[0]?.id,
-    entityAlias: "model",
-  }),
   Databases.loadList(),
   Tables.loadList({
-    query: (state: State, props: TableLoaderProps) => ({
-      dbId: 2,
-      schemaName: "dwh_fitness_mart",
+    query: (state: State, { databases }: DatabaseLoaderProps) => ({
+      dbId: databases.filter(e => e.is_metabot_enabled === true)[0].id,
+      metabot_schemas: true,
     }),
-    listName: "tables",
   }),
   connect(mapStateToProps, mapDispatchToProps),
 )(MetabotWidget);

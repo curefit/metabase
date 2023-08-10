@@ -70,12 +70,6 @@ const mapDispatchToProps = {
 // eslint-disable-next-line import/no-default-export -- deprecated usage
 export default _.compose(
   Databases.loadList(),
-  Tables.loadList({
-    query: (state: State, props: TableLoaderProps) => ({
-      dbId: 2,
-      schemaName: "dwh_fitness_mart",
-    }),
-    listName: "tables",
-  }),
+  Tables.loadList(),
   connect(mapStateToProps, mapDispatchToProps),
 )(Metabot);

@@ -229,9 +229,9 @@
                       (= true active)
                       (t2/select-one-fn :values FieldValues :field_id field-id))]
      (when (<= (count values) enum-cardinality-threshold)
-       (let [ddl-str (format "create type %s_%s_t as enum %s;"
-                             table-name
-                             field-name
+       (let [ddl-str (format "%s"
+                             ;table-name
+                             ;field-name
                              (str/join ", " (map (partial format "'%s'") values)))
              nchars  (count ddl-str)]
          (log/debugf "Pseudo-ddl for field enum %s describes %s values and contains %s chars (~%s tokens)."
@@ -259,19 +259,10 @@
                                   :active
                                   :semantic_type]
                         :table_id table-id :active true)
-         enums        (reduce
-                       (fn [acc {field-name :name :as field}]
-                         (if-some [enums (field->pseudo-enums table field enum-cardinality-threshold)]
-                           (assoc acc field-name enums)
-                           acc))
-                       {}
-                       fields)
          columns      (vec
                        (for [{column-name :name :keys [database_required database_type description]} fields]
                          (cond-> [column-name
-                                  (if (enums column-name)
-                                    (format "%s" database_type "%s_%s_t" table-name column-name)
-                                    (format "%s" database_type "%s" ""))
+                                  (format "%s" database_type)
                                   (if (not= description nil)
                                     (format "column description: %s" description)
                                     (format "%s" ""))]
@@ -300,17 +291,17 @@
                         {:dialect :ansi :pretty true})
                        first
                        mdb.query/format-sql)
-         ddl-str      (str/join "\n\n" (conj (vec (vals enums)) create-sql))
-         nchars       (count ddl-str)]
-     (log/debugf "Pseudo-ddl for table '%s.%s'(%s) describes %s fields, %s enums, and contains %s chars (~%s tokens)."
+         ;ddl-str      (str/join "\n\n" (conj (vec (vals enums)) create-sql))
+         nchars       (count create-sql)]
+     (log/debugf "Pseudo-ddl for table '%s.%s'(%s) describes %s fields, and contains %s chars (~%s tokens)."
                  schema-name
                  table-name
                  table-id
                  (count fields)
-                 (count enums)
+                 ;(count enums)
                  nchars
                  (quot nchars 4))
-     ddl-str))
+     create-sql))
   ([table]
    (table->pseudo-ddl table (metabot-settings/enum-cardinality-threshold))))
 
@@ -321,9 +312,7 @@
   [{database-name :name db_id :id :as database}]
   (let [models (t2/select Card :database_id db_id :dataset true)]
     (-> database
-        (assoc :sql_name (normalize-name database-name))
-        (assoc :models (mapv denormalize-model models))
-        add-model-json-summary)))
+        (assoc :sql_name (normalize-name database-name)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Pseudo-ddls -> Embeddings ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -343,7 +332,7 @@
   Anything so large (the table name, column names, and base column types have to exceed the token limit) is probably
   going to be problematic and a model would be a better fit anyways.
   "
-  ([{table-name :name table-id :id db_id :db_id :as table} enum-cardinality-threshold]
+  ([{table-name :name schema-name :schema table-id :id db_id :db_id :as table} enum-cardinality-threshold]
    (log/debugf
     "Creating embedding for table '%s'(%s) with cardinality threshold '%s'."
     table-name
@@ -352,11 +341,13 @@
    (try
      (let [ddl (table->pseudo-ddl table enum-cardinality-threshold)
            {:keys [prompt embedding tokens]} (metabot-client/create-embedding ddl)]
-       {:prompt    prompt
-        :embedding embedding
-        :tokens    tokens
-        :table_id  table-id
-        :db_id     db_id})
+       {:prompt       prompt
+        :embedding    embedding
+        :tokens       tokens
+        :table_id     table-id
+        :db_id        db_id
+        :table_name   table-name
+        :schema_name  schema-name})
      ;; The most likely case of throwing here is that the ddl is too big.
      ;; When this happens, we'll try again with 1/2 the cardinality selected.
      ;; This will reduce the number of fields that become enumerated.
@@ -428,7 +419,7 @@
 (defn create-metrics-embedding
   ([{table-id :table_id :as table}]
    (log/debugf
-     "Creating embeddings for table (%s)."
+     "Creating embeddings for metrics in table (%s)."
      table-id)
    (try
      (let [metric-ddls (table->metrics-ddls table)]
@@ -452,13 +443,78 @@
 
 
 (def memoized-metrics-embedding
-  "Memoized version of create-table-embedding. Generally embeddings are small, so this is a reasonable tradeoff,
+  "Memoized version of create-metrics-embedding. Generally embeddings are small, so this is a reasonable tradeoff,
   especially when the number of tables in a db is large.
   Should probably have the same threshold as metabot-client/memoized-create-embedding."
   (memoize/ttl
     ^{::memoize/args-fn (fn [[{table-id :id}]]
                           [table-id])}
     create-metrics-embedding
+    ;; 24-hour ttl
+    :ttl/threshold (* 1000 (config/config-int :mb-embedding-memoization))))
+
+(defn enum->ddl
+  "Create a single enum DDL."
+  [field table]
+  (let [enum-values (field->pseudo-enums table field (metabot-settings/enum-cardinality-threshold))]
+    (when enum-values
+      (log/debugf "Creating enum DDL: Field %s.%s.%s, enum_values: %s"
+                  (:schema_name table) (:table_name table) (:name field) enum-values)
+      (str "Field Name: " (:schema_name table) "." (:table_name table) "." (:name field) ", ENUM Values: " enum-values))))
+
+(defn table->enum-ddls
+  "Create individual enum DDLs for the given table."
+  [table]
+  (let [table-id (:table_id table)
+        db-id (:db_id table)
+        fields       (t2/select [Field
+                                 :base_type
+                                 :database_required
+                                 :database_type
+                                 :fk_target_field_id
+                                 :id
+                                 :name
+                                 :description
+                                 :active
+                                 :semantic_type]
+                                :table_id table-id :active true)]
+    (->> fields
+         (map #(enum->ddl % table))
+         (remove nil?))))
+
+(defn create-enums-embedding
+  ([{table-id :table_id :as table}]
+   (log/debugf
+     "Creating embeddings for enums in table (%s)."
+     table-id)
+   (try
+     (let [enum-ddls (table->enum-ddls table)]
+       (let [result-map (map (fn [enum-ddl]
+                               (let [{:keys [prompt embedding tokens]} (metabot-client/create-embedding enum-ddl)]
+                                 {:prompt prompt
+                                  :embedding embedding
+                                  :tokens tokens}))
+                             enum-ddls)]
+         result-map))
+     (catch Exception e
+       (log/warnf
+         (str/join
+           " "
+           ["Embeddings for enums of table (%s) could not be generated."
+            "It could be that this table has too many columns."
+            "You might want to create a model for this table instead."
+            "Error message: %s"])
+         table-id
+         e)))))
+
+(def memoized-enums-embedding
+  "Memoized version of create-table-embedding. Generally embeddings are small, so this is a reasonable tradeoff,
+  especially when the number of tables in a db is large.
+  Should probably have the same threshold as metabot-client/memoized-create-embedding."
+  (memoize/ttl
+    ^{::memoize/args-fn (fn [[{table-id :id}]]
+                          [table-id])}
+    create-enums-embedding
     ;; 24-hour ttl
     :ttl/threshold (* 1000 (config/config-int :mb-embedding-memoization))))
 
@@ -692,7 +748,7 @@
          sorted-prompt-objects (->> score
                                     (sort-by (comp - :prompt_match)))]
      (doseq [prompt-object sorted-prompt-objects]
-       (println (:table_id prompt-object))
+       (println (:prompt prompt-object))
        (println "Prompt Match:" (:prompt_match prompt-object)))
      (let [first-prompt-object (first sorted-prompt-objects)
            threshold-distance (Double. (config/config-str :mb-embedding-threshold))

@@ -17,7 +17,7 @@ import Table from "metabase-lib/metadata/Table";
 import {
   cancelQuery,
   runPromptQuery,
-  updateInitialTable,
+  updateDatabase,
   updatePrompt,
   updateTable,
 } from "../../actions";
@@ -71,7 +71,12 @@ const mapStateToProps = (state: State): StateProps => ({
 const mapDispatchToProps = (dispatch: Dispatch): DispatchProps => ({
   onChangePrompt: prompt => dispatch(updatePrompt(prompt)),  
   onSubmitPrompt: () => dispatch(runPromptQuery()),
-  onDatabaseChange: databaseId => push(Urls.databaseMetabot(databaseId)),
+  // onDatabaseChange: databaseId => push(Urls.databaseMetabot(databaseId)),
+  onDatabaseChange: databaseId => {
+    dispatch(updateTable(null));
+    // dispatch(updateDatabase(databaseId)); // Clear the selected table when changing the database
+    push(Urls.databaseMetabot(databaseId)); // Update the selected database
+  },
   onCancel: () => dispatch(cancelQuery()),
   onTableChange: tableId => dispatch(updateTable(tableId)),
 });
@@ -192,25 +197,20 @@ const getDatabaseTitle = (
   onDatabaseChange: (databaseId: number) => void,
   onTableChange: (tableId: TableId) => void,
 ) => {
-  const name = user?.first_name;
-
-  // console.log(tableState);
-
-  const schema = "dwh_fitness_mart";
+  const name = user?.first_name;  
   const tableId = tableState || tables[0].id;
 
   const databasePicker = (
     <DatabasePicker
-      databases={databases.filter(e => e.id === 2)}
+      databases={[database]}
       selectedDatabaseId={database.id}
       onChange={onDatabaseChange}
     />
   );
   const tablePicker = (
     <DatabaseTablePicker
-      databases={databases.filter(e => e.id === 2)}
-      table={tables}
-      selectedSchema={schema}
+      databases={[database]}
+      table={tables}      
       selectedDatabaseId={database.id}
       selectedTableId={tableId}
       onChange={onTableChange}

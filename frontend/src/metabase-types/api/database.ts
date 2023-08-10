@@ -61,6 +61,8 @@ export interface DatabaseData {
   auto_run_queries: boolean | null;
   refingerprint: boolean | null;
   cache_ttl: number | null;
+  is_metabot_enabled: boolean;
+  metabot_schema: string | null;
   is_sample: boolean;
   is_full_sync: boolean;
   is_on_demand: boolean;

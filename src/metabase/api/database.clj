@@ -435,9 +435,7 @@
 
 (defn get-data-lag [table-name schema-name]
   (try
-    (let [
-          ;url (str "http://127.0.0.1:5000/api/v1/metadata")
-          url (str (config/config-str :mb-garuda-backend) "api/v1/metadata")
+    (let [url (str (config/config-str :mb-garuda-backend) "api/v1/metadata")
           request-body {:tableName table-name :schemaName schema-name}]
       (println "API URL:" url)
       (println "Request Body:" request-body)
@@ -521,6 +519,39 @@
                                   (update :segments (partial filter mi/can-read?))
                                   (update :metrics  (partial filter mi/can-read?))))))))))
 
+(defn- db-metadata-schema-metabot [id include-hidden? include-editable-data-model?]
+  (let [selected-db (api/check-404 (db/select-one Database :id id))
+        db (-> (if include-editable-data-model?
+                 (api/check-404 (db/select-one Database :id id))
+                 (api/read-check Database id))
+               (assoc :tables (db/select Table :db_id id :schema [:in (set (str/split (:metabot_schema selected-db) #","))]))
+               (hydrate [:tables [:fields [:target :has_field_values] :has_field_values] :segments :metrics]))
+        db (if include-editable-data-model?
+             ;; We need to check data model perms after hydrating tables, since this will also filter out tables for
+             ;; which the *current-user* does not have data model perms
+             (check-db-data-model-perms db)
+             db)]
+    (-> db
+        (update :tables (if include-hidden?
+                          identity
+                          (fn [tables]
+                            (->> tables
+                                 (remove :visibility_type)
+                                 (map #(update % :fields filter-sensitive-fields))))))
+        (update :tables (fn [tables]
+                          (if-not include-editable-data-model?
+                            ;; If we're filtering by data model perms, table perm checks were already done by
+                            ;; check-db-data-model-perms
+                            (filter mi/can-read? tables)
+                            tables)))
+        (update :tables (fn [tables]
+                          (for [table tables]
+                            (let [lag-data (get-data-lag (:name table) (:schema table))]
+                              (-> table
+                                  (assoc :latest_sync_timestamp lag-data)
+                                  (update :segments (partial filter mi/can-read?))
+                                  (update :metrics  (partial filter mi/can-read?))))))))))
+
 #_{:clj-kondo/ignore [:deprecated-var]}
 (api/defendpoint-schema GET "/:id/metadata"
   "Get metadata about a `Database`, including all of its `Tables` and `Fields`. Returns DB, fields, and field values.
@@ -530,10 +561,15 @@
   permissions, if Enterprise Edition code is available and a token with the advanced-permissions feature is present.
   In addition, if the user has no data access for the DB (aka block permissions), it will return only the DB name, ID
   and tables, with no additional metadata."
-  [id include_hidden include_editable_data_model schema_name]
+  [id include_hidden include_editable_data_model schema_name metabot_schemas]
   {include_hidden              (s/maybe su/BooleanString)
    include_editable_data_model (s/maybe su/BooleanString)
+   metabot_schemas             (s/maybe su/BooleanString)
    schema_name                 (s/maybe su/KeywordOrString)}
+                        (if metabot_schemas
+                          (db-metadata-schema-metabot id
+                                               (Boolean/parseBoolean include_hidden)
+                                               (Boolean/parseBoolean include_editable_data_model)))
                         (if schema_name
                           (db-metadata-schema id
                                               (Boolean/parseBoolean include_hidden)
@@ -542,6 +578,18 @@
                           (db-metadata id
                                        (Boolean/parseBoolean include_hidden)
                                        (Boolean/parseBoolean include_editable_data_model))))
+
+;#_{:clj-kondo/ignore [:deprecated-var]}
+;(api/defendpoint-schema GET "/:id"
+;                        "Get metadata about a `Database`, including all of its `Tables` and `Fields`. Returns DB, fields, and field values.
+;                        By default only non-hidden tables and fields are returned. Passing include_hidden=true includes them."
+;                        [id metabot_schemas include_hidden include_editable_data_model]
+;                        {include_hidden              (s/maybe su/BooleanString)
+;                         include_editable_data_model (s/maybe su/BooleanString)}
+;                        (if metabot_schemas
+;                                            (db-metadata-schema-metabot id
+;                                                    (Boolean/parseBoolean include_hidden)
+;                                                    (Boolean/parseBoolean include_editable_data_model))))
 
 
 ;;; --------------------------------- GET /api/database/:id/autocomplete_suggestions ---------------------------------
@@ -930,7 +978,7 @@
 (api/defendpoint-schema PUT "/:id"
   "Update a `Database`."
   [id :as {{:keys [name engine details is_full_sync is_on_demand description caveats points_of_interest schedules
-                   auto_run_queries refingerprint cache_ttl settings]} :body}]
+                   auto_run_queries refingerprint cache_ttl is_metabot_enabled metabot_schema settings]} :body}]
   {name               (s/maybe su/NonBlankString)
    engine             (s/maybe DBEngineString)
    refingerprint      (s/maybe s/Bool)
@@ -941,6 +989,8 @@
    points_of_interest (s/maybe s/Str)
    auto_run_queries   (s/maybe s/Bool)
    cache_ttl          (s/maybe su/IntGreaterThanZero)
+   is_metabot_enabled (s/maybe s/Bool)
+   metabot_schema     (s/maybe s/Str)
    settings           (s/maybe su/Map)}
   ;; TODO - ensure that custom schedules and let-user-control-scheduling go in lockstep
   (let [existing-database (api/write-check (db/select-one Database :id id))
@@ -970,6 +1020,7 @@
                                    :is_on_demand       (boolean is_on_demand)
                                    :description        description
                                    :caveats            caveats
+                                   :is_metabot_enabled is_metabot_enabled
                                    :points_of_interest points_of_interest
                                    :auto_run_queries   auto_run_queries}
                                   (cond
@@ -996,6 +1047,7 @@
 
         ;; unlike the other fields, folks might want to nil out cache_ttl
         (db/update! Database id {:cache_ttl cache_ttl})
+        (db/update! Database id {:metabot_schema metabot_schema})
 
         (let [db (db/select-one Database :id id)]
           (events/publish-event! :database-update db)

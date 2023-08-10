@@ -12,12 +12,13 @@ import {
 } from "./HomeLayout.styled";
 
 export interface HomeLayoutProps {
+  metabotSchemaArray: Record<number, any>[];
   hasMetabot?: boolean;
   showIllustration?: boolean;
   children?: ReactNode;
 }
 
-const HomeLayout = ({
+const HomeLayout = ({  
   hasMetabot,
   showIllustration,
   children,
@@ -25,7 +26,7 @@ const HomeLayout = ({
   return (
     <LayoutRoot>
       {showIllustration && <LayoutIllustration />}
-      {hasMetabot ? <MetabotWidget /> : <GreetingSection />}
+      {hasMetabot ? <MetabotWidget/> : <GreetingSection />}
       <LayoutBody>{children}</LayoutBody>
     </LayoutRoot>
   );

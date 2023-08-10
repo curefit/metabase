@@ -56,6 +56,7 @@ import NativeQueryEditorPrompt from "./NativeQueryEditorPrompt";
 
 import "./NativeQueryEditor.css";
 import { NativeQueryEditorRoot } from "./NativeQueryEditor.styled";
+import { getDatabase } from "metabase/setup/selectors";
 
 const AUTOCOMPLETE_DEBOUNCE_DURATION = 700;
 const AUTOCOMPLETE_CACHE_DURATION = AUTOCOMPLETE_DEBOUNCE_DURATION * 1.2; // tolerate 20%
@@ -532,9 +533,11 @@ class NativeQueryEditor extends Component {
 
   isPromptInputVisible = () => {
     const { canUsePromptInput, isNativeEditorOpen } = this.props;
-    const database = this.props.query.database();
+    const database = this.props.query.database();    
+
     const isSupported =
-      database != null && canGenerateQueriesForDatabase(database);
+      database != null && canGenerateQueriesForDatabase(database); 
+      //  && this.props.query.database()?.is_metabot_enabled;
 
     return (
       isNativeEditorOpen &&

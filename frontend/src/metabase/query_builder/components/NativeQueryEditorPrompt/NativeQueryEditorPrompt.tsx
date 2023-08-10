@@ -49,8 +49,7 @@ const NativeQueryEditorPrompt = ({
       const { sql } = await MetabotApi.databasePromptQuery(
         {
           databaseId,
-          question: prompt,
-          schema_name: "dwh_fitness_mart",
+          question: prompt,          
         },
         { cancelled: cancelDeferred.current.promise },
       );

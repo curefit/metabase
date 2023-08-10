@@ -36,6 +36,8 @@ class DatabaseInner extends Base {
   features: DatabaseFeature[];
   settings?: DatabaseSettings;
   native_permissions: NativePermissions;
+  is_metabot_enabled: boolean;
+  metabot_schema: string | null;
 
   // Only appears in  GET /api/database/:id
   "can-manage"?: boolean;

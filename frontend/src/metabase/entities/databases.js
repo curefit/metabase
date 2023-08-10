@@ -45,7 +45,7 @@ const Databases = createEntity({
               : ["metadata", "databases", id],
             existingStatePath: schema_name
               ? ["metadata", "databases", id, "schema_name", schema_name]
-              : ["metadata", "databases", id],
+              : ["metadata", "databases", id],            
             getData: async () => {
               if (schema_name != null) {
                 const databaseMetadata = await MetabaseApi.db_metadata_schema({
@@ -54,12 +54,12 @@ const Databases = createEntity({
                   ...params,
                 });
                 return normalize(databaseMetadata, DatabaseSchema);
-              } else {
+              } else {                
                 const databaseMetadata = await MetabaseApi.db_metadata({
-                  dbId: id,
-                  ...params,
+                    dbId: id,
+                    ...params,
                 });
-                return normalize(databaseMetadata, DatabaseSchema);
+                return normalize(databaseMetadata, DatabaseSchema);                
               }
             },
             reload,

@@ -14324,6 +14324,37 @@ databaseChangeLog:
                   constraints:
                     nullable: false
 
+  - changeSet:
+      id: v47.00-004
+      author: abhishek
+      comment: Added 0.47.0 - Add is_metabot_enabled to metabase_database
+      changes:
+        - addColumn:
+            tableName: metabase_database
+            columns:
+              - column:
+                  name: is_metabot_enabled
+                  type: boolean
+                  remarks: Indicates that Metabot is enabled on this database
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v47.00-004
+      author: abhishekg
+      comment: Added 0.47.0 - Add metabot_schema to metabase_database
+      changes:
+        - addColumn:
+            tableName: metabase_database
+            columns:
+              - column:
+                  name: metabot_schema
+                  type: varchar(254)
+                  remarks: Indicates the schemas available for Metabot is enabled on this database.
+                  constraints:
+                    nullable: true
+
 
 # >>>>>>>>>> DO NOT ADD NEW MIGRATIONS BELOW THIS LINE! ADD THEM ABOVE <<<<<<<<<<
 

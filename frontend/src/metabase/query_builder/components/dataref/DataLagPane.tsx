@@ -16,9 +16,6 @@ interface DataLagPaneProps {
 
 const DataLagPane = ({ onBack, onClose, dataLag }: DataLagPaneProps) => {
 
-  console.log("===data lag pane====");
-  console.log(dataLag);
-
   return (
     <SidebarContent
       title={dataLag.table_name}

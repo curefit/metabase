@@ -212,7 +212,7 @@ export const saveDatabase = function (database) {
     const isUnsavedDatabase = !database.id;
     if (database.cache_ttl === "") {
       database.cache_ttl = null;
-    }
+    }    
     if (isUnsavedDatabase) {
       await dispatch(createDatabase(database));
     } else {

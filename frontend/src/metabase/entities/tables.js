@@ -31,9 +31,11 @@ import {
 
 const listTables = GET("/api/table");
 const listTablesForDatabase = async (...args) =>
-  // HACK: no /api/database/:dbId/tables endpoint
+{   
   (await GET("/api/database/:dbId/metadata")(...args)).tables;
+}
 const listTablesForSchema = GET("/api/database/:dbId/schema/:schemaName");
+const listTabelsForMetabotSchema = GET("/api/database/:dbId/metadata?metabot_schemas=:metabot_schemas");
 const updateFieldOrder = PUT("/api/table/:id/fields/order");
 const updateTables = PUT("/api/table");
 
@@ -53,8 +55,10 @@ const Tables = createEntity({
 
   api: {
     list: async (params, ...args) => {
-      if (params.dbId && params.schemaName) {
+      if (params.dbId && params.schemaName) {        
         return listTablesForSchema(params, ...args);
+      } else if (params.dbId && params.metabot_schemas) {      
+        return (await listTabelsForMetabotSchema(params, ...args)).tables;
       } else if (params.dbId) {
         return listTablesForDatabase(params, ...args);
       } else {

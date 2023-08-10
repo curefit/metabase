@@ -20,6 +20,8 @@ import DatabaseNameField from "../DatabaseNameField";
 import DatabaseDetailField from "../DatabaseDetailField";
 import DatabaseEngineWarning from "../DatabaseEngineWarning";
 import { LinkButton, LinkFooter } from "./DatabaseForm.styled";
+import FormToggle from "metabase/core/components/FormToggle/FormToggle";
+import FormTextArea from "metabase/core/components/FormTextArea/FormTextArea";
 
 export interface DatabaseFormProps {
   engines: Record<string, Engine>;
@@ -29,6 +31,7 @@ export interface DatabaseFormProps {
   isCachingEnabled?: boolean;
   onSubmit?: (values: DatabaseData) => void;
   onEngineChange?: (engineKey: string | undefined) => void;
+  onMetabotChange?: (value: boolean) => void;
   onCancel?: () => void;
 }
 
@@ -41,10 +44,11 @@ const DatabaseForm = ({
   onSubmit,
   onCancel,
   onEngineChange,
+  onMetabotChange,
 }: DatabaseFormProps): JSX.Element => {
   const initialEngineKey = getEngineKey(engines, initialData, isAdvanced);
   const [engineKey, setEngineKey] = useState(initialEngineKey);
-  const engine = getEngine(engines, engineKey);
+  const engine = getEngine(engines, engineKey);  
 
   const validationSchema = useMemo(() => {
     return getValidationSchema(engine, engineKey, isAdvanced);
@@ -57,15 +61,27 @@ const DatabaseForm = ({
     );
   }, [initialData, engineKey, validationSchema]);
 
+  const [isMetabotEnabled, setIsMetabotEnabled] = useState(initialValues?.is_metabot_enabled);
+
   const handleSubmit = useCallback(
     (values: DatabaseData) => {
       if (!values.cache_ttl) {
         values.cache_ttl = null;
       }
+      if (!values.is_metabot_enabled) {
+        values.is_metabot_enabled = false;
+      }
       return onSubmit?.(getSubmitValues(engine, values, isAdvanced));
     },
     [engine, isAdvanced, onSubmit],
-  );
+  );  
+
+  const handleChange = useCallback(
+    (value: boolean) => {
+      setIsMetabotEnabled(value);      
+    },
+    [handleSubmit],
+  );  
 
   const handleEngineChange = useCallback(
     (engineKey: string | undefined) => {
@@ -90,6 +106,7 @@ const DatabaseForm = ({
         isAdvanced={isAdvanced}
         isCachingEnabled={isCachingEnabled}
         onEngineChange={handleEngineChange}
+        onMetabotChange={handleChange}        
         onCancel={onCancel}
       />
     </FormProvider>
@@ -104,6 +121,7 @@ interface DatabaseFormBodyProps {
   isAdvanced: boolean;
   isCachingEnabled: boolean;
   onEngineChange: (engineKey: string | undefined) => void;
+  onMetabotChange: (value: boolean) => void;  
   onCancel?: () => void;
 }
 
@@ -115,6 +133,7 @@ const DatabaseFormBody = ({
   isAdvanced,
   isCachingEnabled,
   onEngineChange,
+  onMetabotChange,  
   onCancel,
 }: DatabaseFormBodyProps): JSX.Element => {
   const { values } = useFormikContext<DatabaseData>();
@@ -145,6 +164,18 @@ const DatabaseFormBody = ({
         name="cache_ttl"
         placeholder={t`Cache TTL in Hours`}
         title={t`Caching`}
+      />
+      <FormToggle
+        name="is_metabot_enabled"
+        placeholder={t`Eable Metabot`}
+        title={t`Enable Metabot`}
+        onChange={value => onMetabotChange(value)}
+      />
+      <FormTextArea
+        name="metabot_schema"
+        placeholder={t`Schemas allowed for Metabot, should be comma separated`}
+        title={t`Schemas for Metabot`}        
+        optional={true}
       />
       <DatabaseFormFooter isAdvanced={isAdvanced} onCancel={onCancel} />
     </Form>

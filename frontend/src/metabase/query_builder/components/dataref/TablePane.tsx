@@ -31,9 +31,6 @@ const mapStateToProps = (state: State, props: TablePaneProps) => ({
 
 const TablePane = ({ table, onItemClick, onBack, onClose }: TablePaneProps) => {
 
-  console.log("------in table pane----------");
-  console.log(table.latest_sync_timestamp);
-
   return (
     <SidebarContent
       title={table.name}

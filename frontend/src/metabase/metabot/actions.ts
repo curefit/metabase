@@ -98,6 +98,9 @@ export const updatePrompt = createAction(UPDATE_PROMPT);
 export const UPDATE_TABLE = "metabase/metabot/UPDATE_TABLE";
 export const updateTable = createAction(UPDATE_TABLE);
 
+export const UPDATE_DATABASE = "metabase/metabot/UPDATE_DATABASE";
+export const updateDatabase = createAction(UPDATE_DATABASE);
+
 export const UPDATE_INITIAL_TABLE = "metabase/metabot/UPDATE_INITIAL_TABLE";
 export const updateInitialTable = createAction(UPDATE_INITIAL_TABLE);
 
@@ -167,8 +170,7 @@ export const fetchQuestion =
         : await MetabotApi.databasePrompt(
             {
               databaseId: entityId,
-              question,
-              schema_name: "dwh_fitness_mart",
+              question,              
               table_id: table_id,
             },
             { cancelled: cancelQueryDeferred.promise },

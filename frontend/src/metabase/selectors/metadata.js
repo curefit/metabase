@@ -189,8 +189,7 @@ export const getMetadata = createSelector(
         f.description.toLowerCase().includes("partition key")
       ) {
         f.display_name = f.display_name.concat(" (partition key)");
-        f.name = f.name.concat(" (partition key)");
-        console.log(f);
+        f.name = f.name.concat(" (partition key)");        
       }
       if (f.name_field != null) {
         return meta.field(f.name_field);

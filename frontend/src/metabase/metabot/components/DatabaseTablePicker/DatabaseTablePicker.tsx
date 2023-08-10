@@ -9,7 +9,7 @@ import Table from "metabase-lib/metadata/Table";
 type DatabasePickerProps = {
   databases: Database[];
   table: Table[];
-  selectedSchema: String;
+  // selectedSchema: String;
   selectedDatabaseId?: DatabaseId;
   selectedTableId: TableId;
   onChange?: (tableId: TableId) => void;
@@ -17,35 +17,31 @@ type DatabasePickerProps = {
 
 const DatabaseTablePicker = ({
   databases,
-  table,
-  selectedSchema,
+  table,  
+  // selectedSchema,
   selectedDatabaseId,
   selectedTableId,
   onChange,
 }: DatabasePickerProps) => {
-  const selectedDatabase = databases.find(d => d.id === selectedDatabaseId);
-  const schema = selectedSchema || "dwh_fitness_mart";
-  const label = selectedTableId
-    ? table.filter(e => e.id === selectedTableId)[0].display_name
-    : t`Fact Table`;
+  const selectedDatabase = databases.find(d => d.id === selectedDatabaseId);  
 
   return (
     // <DatabaseSchemaAndTableDataSelector
     //   triggerClasses="inline"
     //   triggerElement={<Button onlyText>{label}</Button>}
-    //   databases={databases.filter(e => e.id === 39)}
-    //   selectedDatabaseId={selectedDatabase?.id}
-    //   selectedSchema={schema}
+    //   databases={databases.filter(e => e.is_metabot_enabled === true)}
+    //   selectedDatabaseId={selectedDatabase?.id}      
     //   selectedTableId={selectedTableId}
     //   setSourceTableFn={onChange}
     // />
     <SchemaAndTableDataSelector 
       triggerClasses="inline"
-      triggerElement={<Button onlyText>{label}</Button>}
-      databases={databases.filter(e => e.id === 2)}
-      table={table}
-      selectedDatabaseId={selectedDatabase?.id}
-      selectedSchema={schema}
+      // triggerElement={<Button onlyText>{label}</Button>}
+      databases={databases.filter(e => e.is_metabot_enabled === true)}
+      // table={table}
+      // schemas={[schema]}
+      // selectedSchema={table.filter(e => e.schema)}
+      selectedDatabaseId={selectedDatabase?.id}      
       selectedTableId={selectedTableId}
       setSourceTableFn={onChange}
     />

@@ -13,6 +13,7 @@ import {
   SUBMIT_FEEDBACK_FORM,
   UPDATE_PROMPT,
   UPDATE_TABLE,
+  UPDATE_DATABASE,
   UPDATE_QUESTION,
   CANCEL_QUERY,
   SET_UI_CONTROLS,
@@ -26,6 +27,15 @@ export const entityId = handleActions(
     [RESET]: { next: () => null },
   },
   null,
+);
+
+export const database = handleActions(
+  {
+    [INIT]: { next: (state, { payload }) => payload.entityId },
+    [UPDATE_DATABASE]: { next: (state, { payload }) => payload.entityId },
+    [RESET]: { next: () => null },
+  },
+  null
 );
 
 export const entityType = handleActions(

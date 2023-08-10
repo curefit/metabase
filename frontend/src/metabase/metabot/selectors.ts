@@ -36,6 +36,10 @@ export const getPrompt = (state: State) => {
   return state.metabot.prompt;
 };
 
+export const getDatabase = (state: State) => {
+  return state.metabot.entityId;
+}
+
 export const getTable = (state: State) => {
   return state.metabot.table;
 };
