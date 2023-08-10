@@ -525,32 +525,8 @@
                  (api/check-404 (db/select-one Database :id id))
                  (api/read-check Database id))
                (assoc :tables (db/select Table :db_id id :schema [:in (set (str/split (:metabot_schema selected-db) #","))]))
-               (hydrate [:tables [:fields [:target :has_field_values] :has_field_values] :segments :metrics]))
-        db (if include-editable-data-model?
-             ;; We need to check data model perms after hydrating tables, since this will also filter out tables for
-             ;; which the *current-user* does not have data model perms
-             (check-db-data-model-perms db)
-             db)]
-    (-> db
-        (update :tables (if include-hidden?
-                          identity
-                          (fn [tables]
-                            (->> tables
-                                 (remove :visibility_type)
-                                 (map #(update % :fields filter-sensitive-fields))))))
-        (update :tables (fn [tables]
-                          (if-not include-editable-data-model?
-                            ;; If we're filtering by data model perms, table perm checks were already done by
-                            ;; check-db-data-model-perms
-                            (filter mi/can-read? tables)
-                            tables)))
-        (update :tables (fn [tables]
-                          (for [table tables]
-                            (let [lag-data (get-data-lag (:name table) (:schema table))]
-                              (-> table
-                                  (assoc :latest_sync_timestamp lag-data)
-                                  (update :segments (partial filter mi/can-read?))
-                                  (update :metrics  (partial filter mi/can-read?))))))))))
+               (hydrate [:tables [:fields [:target :has_field_values] :has_field_values] :segments :metrics]))]
+    db))
 
 #_{:clj-kondo/ignore [:deprecated-var]}
 (api/defendpoint-schema GET "/:id/metadata"
@@ -569,15 +545,15 @@
                         (if metabot_schemas
                           (db-metadata-schema-metabot id
                                                (Boolean/parseBoolean include_hidden)
-                                               (Boolean/parseBoolean include_editable_data_model)))
-                        (if schema_name
-                          (db-metadata-schema id
-                                              (Boolean/parseBoolean include_hidden)
-                                              (Boolean/parseBoolean include_editable_data_model)
-                                              (str schema_name))
-                          (db-metadata id
-                                       (Boolean/parseBoolean include_hidden)
-                                       (Boolean/parseBoolean include_editable_data_model))))
+                                               (Boolean/parseBoolean include_editable_data_model))
+                          (if schema_name
+                            (db-metadata-schema id
+                                                (Boolean/parseBoolean include_hidden)
+                                                (Boolean/parseBoolean include_editable_data_model)
+                                                (str schema_name))
+                            (db-metadata id
+                                         (Boolean/parseBoolean include_hidden)
+                                         (Boolean/parseBoolean include_editable_data_model)))))
 
 ;#_{:clj-kondo/ignore [:deprecated-var]}
 ;(api/defendpoint-schema GET "/:id"
