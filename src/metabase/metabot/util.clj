@@ -3,6 +3,7 @@
   If this grows much, we might want to split these out into separate nses."
   (:require
    [cheshire.core :as json]
+   [clojure.core.reducers :as r]
    [clojure.core.memoize :as memoize]
    [clojure.string :as str]
    [clojure.math :as Math]
@@ -738,6 +739,64 @@
               seq
               (apply max-key :prompt_match)))))
 
+(defn within-distance? [value1 value2 distance]
+  (println "---check distance---")
+  (println value1 ", " value2)
+  (println (<= (- value1 value2) distance))
+  (<= (- value1 value2) distance))
+
+;(defn filter-prompt-objects [prompt-objects distance]
+;  (let [result (reduce
+;                 (fn [acc current-obj]
+;                   (if (and (not (:breached acc))
+;                            (within-distance?
+;                              (if (:prompt_match acc) (:prompt_match acc) (:prompt_match current-obj))
+;                              (:prompt_match current-obj)
+;                              distance))
+;                     (assoc acc :prompt_objects (conj (:prompt_objects acc) current-obj))
+;                     (assoc acc :breached true)))
+;                 {:breached false :prompt_objects []}
+;                 prompt-objects)]
+;    (:prompt_objects result)))
+
+(defn filter-prompt-objects [prompt-objects distance]
+  (loop [result []
+         prev-match nil
+         prompt-objects prompt-objects]
+    (if (empty? prompt-objects)
+      (filter (complement :breached) result)
+      (let [current-obj (first prompt-objects)
+            current-match (:prompt_match current-obj)]
+        (if (and current-match
+                 (if (not prev-match)
+                     (within-distance? current-match current-match distance)
+                     (within-distance? prev-match current-match distance)))
+          (recur (conj result (assoc current-obj :breached false))
+                 current-match
+                 (rest prompt-objects))
+          (recur (conj result (assoc current-obj :breached true))
+                 current-match
+                 (rest prompt-objects)))))))
+
+
+(defn enum-generate-prompt
+  "Given a set of 'prompt objects' (a seq of items with keys :embedding :tokens :prompt),
+  will determine the set of prompts that best match the given prompt whose token sum
+  does not exceed the token limit."
+  ([prompt-objects prompt token-limit]
+   (let [score                 (score-prompt-embeddings prompt-objects prompt)
+         sorted-prompt-objects (->> score
+                                    (sort-by (comp - :prompt_match)))
+         threshold-distance (Double. (config/config-str :mb-embedding-threshold))
+         similar-prompt-objects (filter-prompt-objects sorted-prompt-objects threshold-distance)]
+     (doseq [prompt-object similar-prompt-objects]
+       (println (:prompt prompt-object))
+       (println "Prompt Match: " (:prompt_match prompt-object)))
+     (let [first-prompt-object (first sorted-prompt-objects)
+           selected-prompts (distinct (conj (mapv :prompt similar-prompt-objects) (:prompt first-prompt-object)))]
+       (str/join "\n" selected-prompts))))
+  ([prompt-objects prompt]
+   (enum-generate-prompt prompt-objects prompt 16000)))
 
 (defn generate-prompt
   "Given a set of 'prompt objects' (a seq of items with keys :embedding :tokens :prompt),
@@ -749,7 +808,14 @@
                                     (sort-by (comp - :prompt_match)))]
      (doseq [prompt-object sorted-prompt-objects]
        (println (:prompt prompt-object))
-       (println "Prompt Match:" (:prompt_match prompt-object)))
+       (println "Prompt Match: " (:prompt_match prompt-object)))
+     ;(reduce
+     ;  (fn [prev-obj prompt-object]
+     ;    (println (:prompt prompt-object))
+     ;    (println "previous prompt match: " (:prompt_match prev-obj) "Prompt Match:" (:prompt_match prompt-object))
+     ;    prompt-object)  ; Return the current prompt-object to be used as prev-obj in the next iteration
+     ;  nil               ; Initial value for prev-obj
+     ;  sorted-prompt-objects)
      (let [first-prompt-object (first sorted-prompt-objects)
            threshold-distance (Double. (config/config-str :mb-embedding-threshold))
            similar-prompt-objects (filter #(<= (- (:prompt_match first-prompt-object) (:prompt_match %)) threshold-distance) sorted-prompt-objects)

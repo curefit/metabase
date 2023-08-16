@@ -29,7 +29,7 @@ class MetadataTableList extends Component {
     tableId: PropTypes.number,
     tables: PropTypes.array.isRequired,
     selectTable: PropTypes.func.isRequired,
-  };
+  };  
 
   updateSearchText(event) {
     this.setState({

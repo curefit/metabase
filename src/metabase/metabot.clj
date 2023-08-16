@@ -81,7 +81,9 @@
                                    :conn-timeout 20000
                                    :conn-request-timeout 20000})]
         (println (json/parse-string (:body response)))
-        (if (= (get-in (json/parse-string (:body response)) ["response_id"]) 200)
+        (println (type (get-in (json/parse-string (:body response)) ["response_id"])))
+        (println (= (get-in (json/parse-string (:body response)) ["response_id"]) "200"))
+        (if (= (get-in (json/parse-string (:body response)) ["response_id"]) "200")
           (get-in (json/parse-string (:body response)) ["output"])
           sql)))
     (catch java.net.SocketTimeoutException e
@@ -126,10 +128,10 @@
           segment-prompt-objects (->> prompt-objects
                                      (map metabot-util/memoized-segments-embedding)
                                       (mapcat identity))
-          ddl            (metabot-util/generate-prompt prompt-objects user_prompt)
+          ddl            (metabot-util/enum-generate-prompt prompt-objects user_prompt)
           metrics        (metabot-util/generate-prompt metric-prompt-objects user_prompt)
           segments       (metabot-util/generate-prompt segment-prompt-objects user_prompt)
-          enums          (metabot-util/generate-prompt enum-prompt-objects user_prompt)
+          enums          (metabot-util/enum-generate-prompt enum-prompt-objects user_prompt)
           context        (assoc-in context [:database :create_database_ddl] ddl)
           context        (assoc-in context [:database :metrics] metrics)
           context        (assoc-in context [:database :segments] segments)
@@ -233,7 +235,7 @@
           ddl            (metabot-util/generate-prompt prompt-objects user_prompt)
           metrics        (metabot-util/generate-prompt metric-prompt-objects user_prompt)
           segments       (metabot-util/generate-prompt segment-prompt-objects user_prompt)
-          enums          (metabot-util/generate-prompt enum-prompt-objects user_prompt)
+          enums          (metabot-util/enum-generate-prompt enum-prompt-objects user_prompt)
           context        (assoc-in context [:database :create_database_ddl] ddl)
           context        (assoc-in context [:database :metrics] metrics)
           context        (assoc-in context [:database :segments] segments)

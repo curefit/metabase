@@ -54,7 +54,7 @@ const Databases = createEntity({
                   ...params,
                 });
                 return normalize(databaseMetadata, DatabaseSchema);
-              } else {                
+              } else {              
                 const databaseMetadata = await MetabaseApi.db_metadata({
                     dbId: id,
                     ...params,

@@ -56,17 +56,17 @@ export default class MetadataSchemaList extends Component {
             )}
           </li>
           {filteredSchemas.map(schema => (
-            <li key={schema}>
+            <li key={schema.name}>
               <a
                 className={cx(
                   "AdminList-item flex align-center no-decoration text-wrap",
                   {
-                    selected: selectedSchema && selectedSchema === schema,
+                    selected: selectedSchema && selectedSchema === schema.name,
                   },
                 )}
-                onClick={() => this.props.onChangeSchema(schema)}
+                onClick={() => this.props.onChangeSchema(schema.name)}
               >
-                {schema}
+                {schema.name}
               </a>
             </li>
           ))}

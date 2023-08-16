@@ -433,14 +433,14 @@
   []
   (saved-cards-virtual-db-metadata :card :include-tables? true, :include-fields? true))
 
-(defn get-data-lag [table-name schema-name]
+(defn get-data-lag [db-id table-name schema-name]
   (try
     (let [url (str (config/config-str :mb-garuda-backend) "api/v1/metadata")
           request-body {:tableName table-name :schemaName schema-name}]
       (println "API URL:" url)
       (println "Request Body:" request-body)
 
-      (let [response (client/post url
+      (if (= 39 db-id) (let [response (client/post url
                                   {:body (json/generate-string request-body)
                                    :content-type :json
                                    :socket-timeout 10000
@@ -448,7 +448,7 @@
                                    :conn-request-timeout 10000})]
         (println "API Response:")
         (println (json/parse-string (:body response)))
-        (json/parse-string (:body response))))
+        (json/parse-string (:body response)))))
     (catch java.net.SocketTimeoutException e
       (println "Error: Request timed out")
       nil)
@@ -481,7 +481,7 @@
                             tables)))
         (update :tables (fn [tables]
                           (for [table tables]
-                            (let [lag-data (get-data-lag (:name table) (:schema table))]
+                            (let [lag-data (get-data-lag id (:name table) (:schema table))]
                              (-> table
                                  (assoc :latest_sync_timestamp lag-data)
                                 (update :segments (partial filter mi/can-read?))
@@ -513,7 +513,7 @@
                             tables)))
         (update :tables (fn [tables]
                           (for [table tables]
-                            (let [lag-data (get-data-lag (:name table) (:schema table))]
+                            (let [lag-data (get-data-lag id (:name table) (:schema table))]
                               (-> table
                                   (assoc :latest_sync_timestamp lag-data)
                                   (update :segments (partial filter mi/can-read?))

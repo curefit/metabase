@@ -13,6 +13,7 @@ import {
   databases as Databases,
   fields as Fields,
 } from "metabase/entities";
+import Schemas from "metabase/entities/schemas";
 import { PLUGIN_FEATURE_LEVEL_PERMISSIONS } from "metabase/plugins";
 import MetadataHeader from "../components/database/MetadataHeader";
 import MetadataTablePicker from "../components/database/MetadataTablePicker";
@@ -29,6 +30,7 @@ const propTypes = {
   idfields: PropTypes.array,
   updateField: PropTypes.func.isRequired,
   onRetireMetric: PropTypes.func.isRequired,
+  schemas: PropTypes.arrayOf(PropTypes.object),
 };
 
 const mapStateToProps = (state, { params }) => {
@@ -40,6 +42,7 @@ const mapStateToProps = (state, { params }) => {
     databaseId,
     tableId,
     idfields: Databases.selectors.getIdfields(state, { databaseId }),
+    schemas: Schemas.selectors.getList(state),
   };
 };
 
@@ -75,8 +78,9 @@ class MetadataEditorInner extends Component {
   }
 
   render() {
-    const { databaseId, tableId, database, loading } = this.props;
+    const { databaseId, tableId, database, loading, schemas } = this.props;
     const hasLoadedDatabase = !loading && database;
+    
     return (
       <div className="p4">
         <MetadataHeader
@@ -94,6 +98,7 @@ class MetadataEditorInner extends Component {
               tableId={tableId}
               databaseId={databaseId}
               selectTable={this.props.selectTable}
+              schemas={schemas}
             />
           )}
           {tableId ? (
@@ -133,7 +138,7 @@ const MetadataEditor = _.compose(
       ...PLUGIN_FEATURE_LEVEL_PERMISSIONS.dataModelQueryProps,
     },
     loadingAndErrorWrapper: false,
-  }),
+  })
 )(MetadataEditorInner);
 
 MetadataEditor.propTypes = propTypes;
