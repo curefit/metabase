@@ -14355,6 +14355,21 @@ databaseChangeLog:
                   constraints:
                     nullable: true
 
+  - changeSet:
+      id: v47.00-004
+      author: abhishekgedela
+      comment: Added 0.47.0 - Add groups to metric
+      changes:
+        - addColumn:
+            tableName: metric
+            columns:
+              - column:
+                  name: groups
+                  type: text
+                  remarks: Indicates the Group Ids who owns the Metric.
+                  constraints:
+                    nullable: true
+
 
 # >>>>>>>>>> DO NOT ADD NEW MIGRATIONS BELOW THIS LINE! ADD THEM ABOVE <<<<<<<<<<
 

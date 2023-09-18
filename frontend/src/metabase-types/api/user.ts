@@ -1,3 +1,5 @@
+import { GroupIds } from "metabase/admin/types";
+
 export type UserId = number;
 
 export type UserAttribute = string;
@@ -13,7 +15,7 @@ export interface BaseUser {
   is_active: boolean;
   is_qbnewb: boolean;
   is_superuser: boolean;
-
+  group_ids: GroupIds;
   date_joined: string;
   last_login: string;
   first_login: string;

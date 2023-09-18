@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { useFormik } from "formik";
 import type { FieldInputProps } from "formik";
@@ -22,32 +22,96 @@ import {
   FormSubmitButton,
 } from "./MetricForm.styled";
 
+import _ from "underscore";
+import { connect } from "react-redux";
+import Select from "metabase/core/components/Select";
+import { GroupIds, UserGroupType, UserGroupsType } from "metabase/admin/types";
+import Group from "metabase/entities/groups";
+import { isNotNull } from "metabase/core/utils/types";
+import {
+  isDefaultGroup,
+  isAdminGroup,  
+  getGroupColor,
+  getGroupNameLocalized,
+} from "metabase/lib/groups";
+
+function getSections(groups: UserGroupsType) {
+  const adminGroup = groups.find(isAdminGroup);
+  const defaultGroup = groups.find(isDefaultGroup);
+  const topGroups = [defaultGroup, adminGroup].filter(g => g != null);
+  const groupsExceptDefaultAndAdmin = groups.filter(
+    g => !isAdminGroup(g) && !isDefaultGroup(g),
+  );
+
+  if (topGroups.length === 0) {
+    return [{ items: groupsExceptDefaultAndAdmin }];
+  }
+
+  return [
+    { items: topGroups },
+    groupsExceptDefaultAndAdmin.length > 0
+      ? {
+          items: groupsExceptDefaultAndAdmin as any,
+          name: t`Groups`,
+        }
+      : null,
+  ].filter(isNotNull);
+}
+
+const mapStateToProps = state => ({  
+  groups: Group.selectors.getList(state),  
+});
+
 const QUERY_BUILDER_FEATURES = {
   filter: true,
   aggregation: true,
 };
 
 export interface MetricFormProps {
-  metric?: Metric;
+  metric?: Metric;  
   previewSummary?: string;
+  groups: UserGroupsType;
   updatePreviewSummary: (previewSummary: string) => void;
   onSubmit: (values: Partial<Metric>) => void;
 }
 
 const MetricForm = ({
+  groups,  
   metric,
   previewSummary,
   updatePreviewSummary,
   onSubmit,
 }: MetricFormProps): JSX.Element => {
+
   const isNew = metric == null;
 
-  const { isValid, getFieldProps, getFieldMeta, handleSubmit } = useFormik({
-    initialValues: metric ?? {},
+  // const [selectedGroupIds, setSelectedGroupIds] = useState<GroupIds>(metric?.groups || []);  
+  const initialGroupIds = metric?.groups ? metric.groups : '';
+  const [selectedGroupIds, setSelectedGroupIds] = useState<GroupIds>(initialGroupIds.split(',').map(Number));
+
+  useEffect(() => {
+    // Update metric.groups when selectedGroupIds changes
+    const groupIdsString = selectedGroupIds.join(',');
+    setFieldValue("groups", groupIdsString);
+  }, [selectedGroupIds]);
+
+  const handleChange = (group, isSelected) => {      
+    if (isSelected) {      
+      setSelectedGroupIds([...selectedGroupIds, group.id]);      
+    } else {      
+      setSelectedGroupIds(selectedGroupIds.filter(id => id !== group.id));      
+    }    
+  }
+  
+
+  const sections = getSections(groups);
+
+  const { isValid, getFieldProps, getFieldMeta, handleSubmit, setFieldValue } = useFormik({
+    initialValues: metric ?? {},    
     isInitialValid: false,
     validate: getFormErrors,
     onSubmit,
-  });
+  });  
 
   return (
     <FormRoot onSubmit={handleSubmit}>
@@ -87,6 +151,32 @@ const MetricForm = ({
               {...getFieldProps("description")}
               {...getFieldMeta("description")}
               placeholder={t`This is a good place to be more specific about less obvious metric rules`}
+            />
+          </FormLabel>
+          <FormLabel
+            title={t`Ownership`}            
+            description={t`The groups or individuals responsible for managing and using this metric, including its use in data filtering.`}
+          >
+            <Select
+              {...getFieldProps("groups")}              
+              onChange={({ target: { value } }: { target: { value: any } }) => {
+                groups
+                  .filter(
+                    // find the differing groups between the new `value` on previous `selectedGroupIds`                    
+                    group =>                    
+                      (selectedGroupIds?.includes(group.id) as any) ^
+                      value.includes(group.id),
+                  )
+                  .forEach(group => handleChange(group, value.includes(group.id)));                  
+              }}
+              optionValueFn={(group: UserGroupType) => group.id}
+              optionNameFn={getGroupNameLocalized}
+              optionStylesFn={(group: UserGroupType) => ({
+                color: getGroupColor(group),
+              })}
+              value={selectedGroupIds}  
+              sections={sections}
+              multiple
             />
           </FormLabel>
           {!isNew && (
@@ -176,4 +266,22 @@ const getQueryBuilderProps = ({
   };
 };
 
-export default MetricForm;
+const getGroupsProps = ({
+  name,
+  value,
+  onChange,
+}: FieldInputProps<StructuredQuery>) => {
+  return {
+    value,
+    onChange: (value: StructuredQuery) => onChange({ target: { name, value } }),
+  };
+};
+
+// export default MetricForm;
+
+export default _.compose(
+  Group.loadList({
+    reload: true,
+  }),
+  connect(mapStateToProps),
+)(MetricForm);

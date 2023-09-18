@@ -46,7 +46,6 @@ import {
   ViewHeaderActionPanel,
   ViewHeaderIconButtonContainer,
   StyledQuestionWarnings,
-  StyledQuestionMetadata,
 } from "./ViewHeader.styled";
 
 const viewTitleHeaderPropTypes = {
@@ -471,10 +470,7 @@ function ViewTitleHeaderRightSide(props) {
             question={question}
             onOpenModal={onOpenModal}
           />
-        )}
-      {isNative && isSaved && question && question._card && (
-        <StyledQuestionMetadata question={question} onOpenModal={onOpenModal} />
-      )}
+        )}      
       {hasExploreResultsLink && <ExploreResultsLink question={question} />}
       {hasRunButton && !isShowingNotebook && (
         <ViewHeaderIconButtonContainer>

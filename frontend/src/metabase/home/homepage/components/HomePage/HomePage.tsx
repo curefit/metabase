@@ -40,9 +40,11 @@ const HomePage = ({ onOpenNavbar }: HomePageProps): JSX.Element => {
     return hasModels && hasSupportedDatabases && isMetabotEnabled;
   };
 
-  const isMetabotEnabled = useSelector(getIsMetabotEnabled);
+  const isMetabotEnabled = useSelector(getIsMetabotEnabled);  
 
   const hasBot = useSelector(getUser).has_access_to_metabot;
+
+  // entities: getMetrics(state, props),
 
   const hasMetabot = getHasMetabot(
     databaseListState.data,

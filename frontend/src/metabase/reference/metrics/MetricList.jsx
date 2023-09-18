@@ -16,7 +16,7 @@ import MetabaseSettings from "metabase/lib/settings";
 import * as metadataActions from "metabase/redux/metadata";
 import ReferenceHeader from "../components/ReferenceHeader";
 
-import { getMetrics, getError, getLoading } from "../selectors";
+import { getMetrics, getError, getLoading, getUser } from "../selectors";
 
 const emptyStateData = {
   title: t`Metrics are the official numbers that your team cares about`,
@@ -34,7 +34,26 @@ const mapStateToProps = (state, props) => ({
   entities: getMetrics(state, props),
   loading: getLoading(state, props),
   loadingError: getError(state, props),
+  user: getUser(state, props),
 });
+
+function filterEntities(entities, userObj) {
+  if(!userObj.is_superuser)
+  {
+    const filteredEntities = {};
+    Object.entries(entities).forEach(([key, entity]) => {
+      if (entity.groups && userObj.group_ids) {
+        const entityGroups = entity.groups.split(',').map(Number);
+        if (entityGroups.some(group => userObj.group_ids.includes(group))) {
+          filteredEntities[key] = entity;
+        }
+      }
+    });
+    return filteredEntities;
+  } else {
+    return entities;
+  }
+}
 
 const mapDispatchToProps = {
   ...metadataActions,
@@ -49,7 +68,9 @@ class MetricList extends Component {
   };
 
   render() {
-    const { entities, style, loadingError, loading } = this.props;
+    const { entities, style, loadingError, loading, user } = this.props;
+
+    const filteredEntities = filterEntities(entities, user);
 
     return (
       <div style={style} className="full">
@@ -59,10 +80,10 @@ class MetricList extends Component {
           error={loadingError}
         >
           {() =>
-            Object.keys(entities).length > 0 ? (
+            Object.keys(filteredEntities).length > 0 ? (
               <div className="wrapper wrapper--trim">
                 <List>
-                  {Object.values(entities).map(
+                  {Object.values(filteredEntities).map(
                     (entity, index) =>
                       entity &&
                       entity.id &&

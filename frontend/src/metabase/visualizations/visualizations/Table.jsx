@@ -21,6 +21,7 @@ import {
   tableColumnSettings,
   getTitleForColumn,
   isPivoted as _isPivoted,
+  isTransposed as _isTransposed,
 } from "metabase/visualizations/lib/settings/column";
 
 import {
@@ -64,6 +65,8 @@ export default class Table extends Component {
 
   static isPivoted = _isPivoted;
 
+  static isTransposed = _isTransposed;
+
   static settings = {
     ...columnSettings({ hidden: true }),
     "table.pivot": {
@@ -78,6 +81,18 @@ export default class Table extends Component {
         Q_DEPRECATED.isStructured(card.dataset_query) &&
         data.cols.filter(isMetric).length === 1 &&
         data.cols.filter(isDimension).length === 2,
+    },
+    "table.transpose": {
+      section: t`Columns`,
+      title: t`Tranpose table`,
+      widget: "toggle",
+      inline: true,
+      getHidden: ([{ card, data }]) => data && data.cols.length >= 20,
+      getDefault: ([{ card, data }]) =>
+        data && 
+        Q_DEPRECATED.isStructured(card.dataset_query) &&
+        data.cols.filter(isMetric).length === 1 &&
+        data.cols.filter(isDimension).length === 2
     },
     "table.pivot_column": {
       section: t`Columns`,
@@ -333,6 +348,16 @@ export default class Table extends Component {
           normalIndex,
           pivotIndex,
           cellIndex,
+          settings,
+        ),
+      });
+    } else if(Table.isTransposed(series, settings)) {
+      
+      const [{ data }] = series;
+
+      this.setState({
+        data: DataGrid.transposeData(
+          data,
           settings,
         ),
       });

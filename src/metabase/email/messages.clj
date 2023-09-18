@@ -135,6 +135,37 @@
   (concat (when-let [admin-email (public-settings/admin-email)]
             [admin-email])
           (db/select-field :email 'User, :is_superuser true, :is_active true, {:order-by [[:id :asc]]})))
+(defn- all-group-recipients
+  "Return a sequence of email addresses for all Admin users.
+
+  The first recipient will be the site admin (or oldest admin if unset), which is the address that should be used in
+  `mailto` links (e.g., for the new user to email with any questions)."
+  [group-ids]
+  ;(db/select-field :email 'User, :is_superuser true, :is_active true, {:order-by [[:id :asc]]})
+  (map :email (mdb.query/query {:select-distinct    [:user.email]
+                                :from               [[:core_user :user]]
+                                :join               [[:permissions_group_membership :permissions_group_membership] [:= :user.id :permissions_group_membership.user_id]
+                                                    [:permissions_group :permissions_group] [:= :permissions_group_membership.group_id :permissions_group.id]]
+                                :where              [[:in :permissions_group.id group-ids]]})))
+
+(defn send-metric-revision-mail
+  "Send an email to the Groups letting them know metric definition is revised"
+  [metric]
+  (let [groups     (:groups metric)
+        group-ids  (map #(Integer/parseInt %) (clojure.string/split groups #","))
+        recipients (all-group-recipients group-ids)]
+    (println "---groups---")
+    (println recipients)
+    (when (seq recipients)
+      (email/send-message!
+          :subject      (str (trs "Metric: {0} revised" (:name metric)))
+          :recipients   (vec recipients)
+          :message-type :html
+          :message      (stencil/render-file "metabase/email/metric_revised_notification"
+                                             (merge (common-context)
+                                                    {:logoHeader        true
+                                                     :metricName        (:name metric)
+                                                     :metricUrl (str (public-settings/site-url) "/reference/metrics/" (:id metric))}))))))
 
 (defn send-user-joined-admin-notification-email!
   "Send an email to the `invitor` (the Admin who invited `new-user`) letting them know `new-user` has joined."

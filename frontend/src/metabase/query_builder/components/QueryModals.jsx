@@ -24,7 +24,6 @@ import { CreateAlertModalContent } from "metabase/query_builder/components/Alert
 import { ImpossibleToCreateModelModal } from "metabase/query_builder/components/ImpossibleToCreateModelModal";
 import NewDatasetModal from "metabase/query_builder/components/NewDatasetModal";
 import QuestionWarningsModalComponent from "metabase/query_builder/components/view/QuestionWarningsModalComponent";
-import QuestionMetadataModalComponent from "metabase/query_builder/components/view/QuestionMetadataModalComponent";
 import EntityCopyModal from "metabase/entities/containers/EntityCopyModal";
 import BulkFilterModal from "metabase/query_builder/components/filters/modals/BulkFilterModal";
 import NewEventModal from "metabase/timelines/questions/containers/NewEventModal";
@@ -285,13 +284,6 @@ class QueryModals extends React.Component {
     ) : modal === MODAL_TYPES.WARNINGS ? (
       <Modal onClose={onCloseModal}>
         <QuestionWarningsModalComponent
-          question={question}
-          onClose={onCloseModal}
-        />
-      </Modal>
-    ) : modal === MODAL_TYPES.SQL_ASSISTANT ? (
-      <Modal onClose={onCloseModal}>
-        <QuestionMetadataModalComponent
           question={question}
           onClose={onCloseModal}
         />

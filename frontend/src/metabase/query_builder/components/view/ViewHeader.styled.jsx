@@ -11,7 +11,6 @@ import { breakpointMaxSmall, space } from "metabase/styled-components/theme";
 import ViewSection, { ViewSubHeading, ViewHeading } from "./ViewSection";
 import QuestionDataSource from "./QuestionDataSource";
 import QuestionWarnings from "./QuestionWarnings";
-import QuestionMetadata from "./QuestionMetadata";
 
 export const ViewHeaderContainer = styled(ViewSection)`
   border-bottom: 1px solid ${color("border")};
@@ -216,16 +215,6 @@ export const ViewHeaderIconButtonContainer = styled.div`
 `;
 
 export const StyledQuestionWarnings = styled(QuestionWarnings)`
-  margin-bottom: 0.5rem;
-  margin-left: 0.5rem;
-  padding-right: 1rem;
-  ${breakpointMaxSmall} {
-    margin-left: 0;
-    padding-right: 0;
-  }
-`;
-
-export const StyledQuestionMetadata = styled(QuestionMetadata)`
   margin-bottom: 0.5rem;
   margin-left: 0.5rem;
   padding-right: 1rem;

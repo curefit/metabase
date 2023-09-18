@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import { connect } from "react-redux";
 import ReactDOM from "react-dom";
 import PropTypes from "prop-types";
 import { t } from "ttag";
@@ -18,13 +19,15 @@ import {
   AggregationFieldList,
 } from "./AggregationPopover.styled";
 
+import { getUser } from "metabase/selectors/user";
+
 const COMMON_SECTION_NAME = t`Common Metrics`;
 const BASIC_SECTION_NAME = t`Basic Metrics`;
 const CUSTOM_SECTION_NAME = t`Custom Expression`;
 
 const COMMON_AGGREGATIONS = new Set(["count"]);
 
-export default class AggregationPopover extends Component {
+class AggregationPopover extends Component {
   constructor(props, context) {
     super(props, context);
 
@@ -38,7 +41,7 @@ export default class AggregationPopover extends Component {
         props.aggregation &&
         props.aggregation.length > 1 &&
         (AGGREGATION.isCustom(props.aggregation) ||
-          AGGREGATION.isNamed(props.aggregation)),
+          AGGREGATION.isNamed(props.aggregation)),      
     };
   }
 
@@ -64,7 +67,7 @@ export default class AggregationPopover extends Component {
 
     width: PropTypes.number,
     maxHeight: PropTypes.number,
-    alwaysExpanded: PropTypes.bool,
+    alwaysExpanded: PropTypes.bool,    
   };
 
   static defaultProps = {
@@ -295,11 +298,17 @@ export default class AggregationPopover extends Component {
     const filter = metric =>
       maybeOverriddenShowMetrics
         ? !metric.archived ||
-          (selectedAggregation && selectedAggregation.id === metric.id)
+          (selectedAggregation && selectedAggregation.id === metric.id)          
         : // GA metrics are more like columns, so they should be displayed even when showMetrics is false
           metric.googleAnalyics;
 
     if (table.metrics) {
+      table.metrics = table.metrics.filter(e => {        
+        if(this.props.user.is_superuser || (e.groups && e.groups.split(",").map(Number).some(group => this.props.user.group_ids.includes(group))))
+        {
+          return e
+        }
+      })
       return table.metrics.filter(filter);
     }
 
@@ -325,6 +334,7 @@ export default class AggregationPopover extends Component {
     const aggregation = AGGREGATION.getContent(this.state.aggregation);
     const selectedAggregation = this.getSelectedAggregation(table, aggregation);
     const sections = this.getSections(table, selectedAggregation);
+    const user = this.props.user;
 
     if (editingAggregation) {
       return (
@@ -410,3 +420,10 @@ export default class AggregationPopover extends Component {
     );
   }
 }
+
+const mapStateToProps = state => ({
+  user: getUser(state),
+});
+
+// Connect the component to the Redux store
+export default connect(mapStateToProps)(AggregationPopover);

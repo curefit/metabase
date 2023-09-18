@@ -515,6 +515,16 @@ export function isPivoted(series, settings) {
   return pivotIndex >= 0 && cellIndex >= 0 && normalIndex >= 0;
 }
 
+export function isTransposed(series, settings) {
+  const [{ data }] = series;
+
+  if (!settings["table.transpose"]) {
+    return false;
+  }  
+
+  return true;
+}
+
 export const getTitleForColumn = (column, series, settings) => {
   const pivoted = isPivoted(series, settings);
   if (pivoted) {

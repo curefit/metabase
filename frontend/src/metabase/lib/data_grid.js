@@ -597,6 +597,63 @@ export function pivot(data, normalCol, pivotCol, cellCol) {
   };
 }
 
+export function transposeData(data) {
+  // Extract the rows and columns from the input data
+  const { cols, rows } = data;
+
+  // Create an empty grid to store the transposed data
+  const transposedRows = [];
+  
+  // The first row in transposedRows should be the new column names
+  const transposedColumnNames = cols.map(col => col.name);
+  
+  let transposeColNames = [];
+  // Loop through the columns
+  for (let colIdx = 0; colIdx < cols.length; colIdx++) {
+    if (colIdx === 0) {
+      transposeColNames = rows.map((row) => row[colIdx]);
+    }
+    else {
+      const transposedRow = rows.map((row) => row[colIdx]);
+      const newRow = [transposedColumnNames[colIdx]].concat(transposedRow)
+      console.log(newRow);
+      transposedRows.push(newRow);
+    }
+  }
+
+  // Create new column metadata for the transposed data
+  const transposedCols = transposeColNames.map((columnName, colIdx) => {    
+    const transposedCol = {
+      name: columnName, // Use the column name as the value
+      display_name: formatValue(columnName, { column: cols[colIdx] }) || "", // You can customize the display name if needed
+      _dimension: {
+        value: columnName,
+        column: cols[colIdx],
+      },
+    };
+    return transposedCol;
+  });
+
+  // add first value in the original col to new first row
+  const newTransposedCols = [{
+    name: transposedColumnNames[0], // Use the column name as the value
+    display_name: transposedColumnNames[0], // You can customize the display name if needed
+    _dimension: {
+      value: transposedColumnNames[0],
+      column: transposedColumnNames[0],
+    },
+  }].concat(transposedCols);
+
+  // Return the transposed data
+  return {
+    cols: newTransposedCols,
+    columns: newTransposedCols, // Optionally include 'columns' for consistency
+    rows: transposedRows,
+  };
+}
+
+
+
 function distinctValuesSorted(rows, pivotColIdx, normalColIdx) {
   const normalSet = new Set();
   const pivotSet = new Set();

@@ -1,3 +1,4 @@
+import { GroupIds } from "metabase/admin/types";
 import { StructuredQuery } from "./query";
 import { TableId } from "./table";
 
@@ -11,4 +12,5 @@ export interface Metric {
   archived: boolean;
   definition: StructuredQuery;
   revision_message?: string;
+  groups: String;
 }
