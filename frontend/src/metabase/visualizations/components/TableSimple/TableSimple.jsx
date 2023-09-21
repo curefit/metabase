@@ -52,6 +52,7 @@ function TableSimple({
   settings,
   height,
   isPivoted,
+  isTransposed,
   className,
   onVisualizationClick,
   visualizationIsClickable,
@@ -162,7 +163,7 @@ function TableSimple({
 
   const renderRow = useCallback(
     (rowIndex, index) => {
-      const ref = index === 0 ? firstRowRef : null;
+      const ref = index === 0 ? firstRowRef : null;            
       return (
         <tr key={rowIndex} ref={ref} data-testid="table-row">
           {data.rows[rowIndex].map((value, columnIndex) => (
@@ -175,6 +176,7 @@ function TableSimple({
               rowIndex={rowIndex}
               columnIndex={columnIndex}
               isPivoted={isPivoted}
+              isTransposed={isTransposed}
               getCellBackgroundColor={getCellBackgroundColor}
               getExtraDataForClick={getExtraDataForClick}
               checkIsVisualizationClickable={checkIsVisualizationClickable}

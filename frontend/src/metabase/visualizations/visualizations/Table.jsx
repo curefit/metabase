@@ -87,7 +87,7 @@ export default class Table extends Component {
       title: t`Tranpose table`,
       widget: "toggle",
       inline: true,
-      getHidden: ([{ card, data }]) => data && data.cols.length >= 20,
+      getHidden: ([{ card, data }]) => data && data.rows.length >= 1000,
       getDefault: ([{ card, data }]) =>
         data && 
         Q_DEPRECATED.isStructured(card.dataset_query) &&
@@ -400,6 +400,7 @@ export default class Table extends Component {
     const [{ card }] = series;
     const sort = getIn(card, ["dataset_query", "query", "order-by"]) || null;
     const isPivoted = Table.isPivoted(series, settings);
+    const isTransposed = Table.isTransposed(series, settings);
     const areAllColumnsHidden = data.cols.length === 0;
     const TableComponent = isDashboard ? TableSimple : TableInteractive;
 
@@ -434,6 +435,7 @@ export default class Table extends Component {
         {...this.props}
         data={data}
         isPivoted={isPivoted}
+        isTransposed={isTransposed}
         sort={sort}
         getColumnTitle={this.getColumnTitle}
       />

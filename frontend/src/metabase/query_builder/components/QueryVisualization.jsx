@@ -59,6 +59,22 @@ export default class QueryVisualization extends Component {
       loadingMessage,
     } = this.props;
 
+    console.log("-----Query Visualisation-------");
+    console.log(question);
+    console.log(this.props);
+
+    let newResult = result;
+
+    if(!this.props.isDirty 
+      && question._card.warnings 
+      && question._card.warnings.length > 0 
+      && question._card.warnings[0] != null
+      && question._card.warnings[0].warnings?.filter(e => e.warningCode?.name === "PARTITION_NOT_USED").length > 0 
+      && result) {
+      newResult.error = "Oops! You missed adding some important 'Partition Keys' in your SQL query. Please include them in where clause. If you're unsure, look at the warnings to help you out."
+      console.log(newResult);
+    }    
+
     return (
       <div className={cx(className, "relative stacking-context full-height")}>
         {isRunning ? (
@@ -84,7 +100,7 @@ export default class QueryVisualization extends Component {
             "Visualization--loading": isRunning,
           })}
         >
-          {result?.error ? (
+          {newResult?.error ? (
             <VisualizationError
               className="spread"
               error={result.error}
@@ -92,7 +108,7 @@ export default class QueryVisualization extends Component {
               card={question.card()}
               duration={result.duration}
             />
-          ) : result?.data ? (
+          ) : newResult?.data ? (
             <VisualizationResult
               {...this.props}
               className="spread"

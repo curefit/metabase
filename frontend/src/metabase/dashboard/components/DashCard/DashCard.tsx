@@ -70,7 +70,17 @@ function getSeriesError(series: Series) {
     };
   }
 
-  const errors = series.map(s => s.error).filter(Boolean);
+  const errors = series.map(s => {
+    const newCard: any = s;
+    if(newCard.card?.warnings && newCard.card?.warnings[0]?.warnings?.filter(e => e.warningCode?.name === "PARTITION_NOT_USED").length > 1 && s.data) {
+      s.error = {
+        status: 400,
+        data: "Oops! You missed adding some important 'Partition Keys' in your SQL query. Please include them in where clause. If you're unsure, look at the warnings to help you out."
+      }
+      console.log(s);
+    }
+  return s.error
+  }).filter(Boolean);
   if (errors.length > 0) {
     if (IS_EMBED_PREVIEW) {
       const message = errors[0]?.data || getGenericErrorMessage();

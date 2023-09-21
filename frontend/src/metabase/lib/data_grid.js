@@ -559,6 +559,9 @@ export function pivot(data, normalCol, pivotCol, cellCol) {
   // keep a record of which row the data came from for onVisualizationClick
   const sourceRows = normalValues.map(() => pivotValues.map(() => null));
 
+  console.log("---sourceRows---");
+  console.log(sourceRows)
+
   // fill it up with the data
   for (let j = 0; j < data.rows.length; j++) {
     const normalColIdx = normalValues.lastIndexOf(data.rows[j][normalCol]);
@@ -569,8 +572,8 @@ export function pivot(data, normalCol, pivotCol, cellCol) {
     sourceRows[normalColIdx][pivotColIdx] = j;
   }
 
-  // provide some column metadata to maintain consistency
-  const cols = pivotValues.map(function (value, idx) {
+  // provide some column metadata to maintain consistency  
+  const cols = pivotValues.map(function (value, idx) {    
     if (idx === 0) {
       // first column is always the coldef of the normal column
       return data.cols[normalCol];
@@ -587,7 +590,7 @@ export function pivot(data, normalCol, pivotCol, cellCol) {
         },
       };
     }
-  });
+  });  
 
   return {
     cols: cols,
@@ -615,8 +618,7 @@ export function transposeData(data) {
     }
     else {
       const transposedRow = rows.map((row) => row[colIdx]);
-      const newRow = [transposedColumnNames[colIdx]].concat(transposedRow)
-      console.log(newRow);
+      const newRow = [transposedColumnNames[colIdx]].concat(transposedRow)      
       transposedRows.push(newRow);
     }
   }
@@ -625,10 +627,10 @@ export function transposeData(data) {
   const transposedCols = transposeColNames.map((columnName, colIdx) => {    
     const transposedCol = {
       name: columnName, // Use the column name as the value
-      display_name: formatValue(columnName, { column: cols[colIdx] }) || "", // You can customize the display name if needed
+      display_name: formatValue(columnName, { column: data.cols[0] }) || "", // You can customize the display name if needed
       _dimension: {
         value: columnName,
-        column: cols[colIdx],
+        column: data.cols[0],
       },
     };
     return transposedCol;

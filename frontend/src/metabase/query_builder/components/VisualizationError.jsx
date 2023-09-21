@@ -91,11 +91,49 @@ class VisualizationError extends Component {
     duration: PropTypes.number.isRequired,
     error: PropTypes.object.isRequired,
     className: PropTypes.string,
-  };
+  };  
 
-  render() {
+  render() {    
     const { via, card, duration, error, className } = this.props;
     console.log("error", error);
+
+  //   const warnings = [
+  //     {
+  //         "id": 14661824,
+  //         "cardId": 32683,
+  //         "warnings": [
+  //             {
+  //                 "warningCode": {
+  //                     "code": -1,
+  //                     "name": "PARTITION_NOT_USED"
+  //                 },
+  //                 "message": "Partition not used for pk_cfprodplatforms_rashi.user_event.Available partition columns are: [\"createddate_date\"]"
+  //             },
+  //             {
+  //                 "warningCode": {
+  //                     "code": -1,
+  //                     "name": "HIGH_CUMULATIVE_MEMORY_USAGE"
+  //                 },
+  //                 "message": "Optimize query to reduce memory usage"
+  //             }
+  //         ],
+  //         "queryHash": "61564dfdde0e98b05f10be952cd42a9906158b67312a588b381cefc32c1bc905",
+  //         "executionStartTime": "2023-09-19T06:00:00.969+0000",
+  //         "tables": [
+  //             "pk_cfprodplatforms_rashi.user_event"
+  //         ],
+  //         "archive": true
+  //     }
+  // ]
+
+  //   console.log("======error=======");
+  //   console.log(card);
+
+  //   card.warnings = warnings;
+
+  //   if(card.warnings?.warnings?.warningCode?.name === "PARTITION_NOT_USED") {
+  //     error = "You've not used Partitions Keys in your Query, Please fix the SQL Query to get the results."
+  //   }
 
     if (error && typeof error.status === "number") {
       // Assume if the request took more than 15 seconds it was due to a timeout

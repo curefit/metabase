@@ -87,7 +87,7 @@ export function getIconForVisualizationType(display) {
   return viz && viz.iconName;
 }
 
-export const extractRemappings = series => {
+export const extractRemappings = series => {  
   const se = series.map(s => ({
     ...s,
     data: s.data && extractRemappedColumns(s.data),
@@ -111,7 +111,7 @@ export function canSavePng(display) {
 }
 
 // removes columns with `remapped_from` property and adds a `remapping` to the appropriate column
-export const extractRemappedColumns = data => {
+export const extractRemappedColumns = data => {  
   const cols = data.cols.map(col => ({
     ...col,
     remapped_from_index:

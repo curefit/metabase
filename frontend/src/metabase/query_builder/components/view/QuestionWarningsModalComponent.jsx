@@ -88,8 +88,7 @@ function QuestionWarningsModalComponent({ question, onClose }) {
         <hr />
         {archive > 0 ? (
           <p style={{ fontWeight: "bold", color: "#ED6E6E" }}>
-            Your card will be archived in 7 days, if no Action is taken. Please
-            contact analytics-tech@curefit.com.
+            Please contact analytics-tech@curefit.com for any doubts.
           </p>
         ) : null}
       </ModalContent>

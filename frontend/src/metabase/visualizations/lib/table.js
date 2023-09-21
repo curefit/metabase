@@ -5,6 +5,7 @@ export function getTableClickedObjectRowData(
   rowIndex,
   columnIndex,
   isPivoted,
+  isTransposed,
   data,
 ) {
   const { rows, cols } = series.data;
@@ -12,13 +13,13 @@ export function getTableClickedObjectRowData(
   // if pivoted, we need to find the original rowIndex from the pivoted row/columnIndex
   const originalRowIndex = isPivoted
     ? data.sourceRows[rowIndex][columnIndex]
-    : rowIndex;
+    : rowIndex;  
 
   // originalRowIndex may be null if the pivot table is empty in that cell
-  if (originalRowIndex === null) {
+  if (originalRowIndex === null || originalRowIndex === undefined) {
     return null;
   } else {
-    return rows[originalRowIndex].map((value, index) => ({
+    return rows[originalRowIndex]?.map((value, index) => ({
       value,
       col: cols[index],
     }));
@@ -31,6 +32,7 @@ export function getTableCellClickedObject(
   rowIndex,
   columnIndex,
   isPivoted,
+  isTransposed,
   clickedRowData,
 ) {
   const { rows, cols } = data;
