@@ -8,6 +8,7 @@
    [metabase.util.i18n :refer [tru]]
    [methodical.core :as methodical]
    [schema.core :as s]
+   [toucan.db :as db]
    [toucan2.core :as t2]))
 
 (def QueryExecution
@@ -31,6 +32,13 @@
   [{context :context, :as query-execution}]
   (u/prog1 query-execution
     (validate-context context)))
+
+(defn get-result-rows
+  "Fetch the result rows for query with QUERY-HASH if available.
+   Returns `nil` if no information is available."
+  ^Integer [^bytes query-hash]
+  {:pre [(instance? (Class/forName "[B") query-hash)]}
+  (db/select-one-field :result_rows QueryExecution :hash query-hash {:order-by [[:started_at :desc]]}))
 
 (t2/define-after-select :model/QueryExecution
   [{:keys [result_rows] :as query-execution}]

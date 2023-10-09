@@ -374,6 +374,15 @@ function hydrateFieldTarget(
 
 function hydrateNameField(field: Field, metadata: Metadata): Field | undefined {
   const nameFieldId = field.getPlainObject().name_field;
+  if (field.description === "partition key") {
+    field.display_name = field.display_name.concat(
+      " (",
+      field.description,
+      ")",
+    );
+    field.name = field.name.concat(" (", field.description, ")");
+    // console.log(f);
+  }
   if (nameFieldId != null) {
     return metadata.field(nameFieldId) ?? undefined;
   } else if (field.table && field.isPK()) {

@@ -3,17 +3,21 @@
   (:require
    [clojure.string :as str]
    [medley.core :as m]
+   [cheshire.core :as json]
+   [buddy.core.hash :as hash]
    [metabase.api.common :as api]
    [metabase.mbql.normalize :as mbql.normalize]
    [metabase.mbql.schema :as mbql.s]
    [metabase.mbql.util :as mbql.u]
    [metabase.models.card :as card :refer [Card]]
    [metabase.models.dashboard :refer [Dashboard]]
+   [metabase.models.query-execution :as query-execution]
    [metabase.models.database :refer [Database]]
    [metabase.models.query :as query]
    [metabase.public-settings :as public-settings]
    [metabase.public-settings.premium-features :as premium-features :refer [defenterprise]]
    [metabase.query-processor :as qp]
+   [metabase.api.dataset :as dataset-api]
    [metabase.query-processor.error-type :as qp.error-type]
    [metabase.query-processor.middleware.constraints :as qp.constraints]
    [metabase.query-processor.middleware.permissions :as qp.perms]
@@ -24,7 +28,8 @@
    [metabase.util.log :as log]
    [metabase.util.schema :as su]
    [schema.core :as s]
-   [toucan2.core :as t2]))
+   [toucan2.core :as t2]
+   [toucan.db :as db]))
 
 (set! *warn-on-reflection* true)
 
@@ -217,3 +222,36 @@
                 (u/pprint-to-str query))
     (binding [qp.perms/*card-id* card-id]
      (run query info))))
+
+(defn download-from-cache?
+  [card-id export-format
+   & {:keys [parameters constraints context dashboard-id middleware ignore_cache]
+      :or   {constraints (qp.constraints/default-query-constraints)
+             context     :question}}]
+  (let [card  (api/read-check (db/select-one [Card :id :name :dataset_query :database_id
+                                              :cache_ttl :collection_id :dataset :result_metadata]
+                                             :id card-id))
+        query (-> (assoc (query-for-card card parameters constraints middleware {:dashboard-id dashboard-id}) :async? true)
+                  (update :middleware (fn [middleware]
+                                        (merge
+                                          {:js-int-to-string? true :ignore-cached-results? ignore_cache}
+                                          middleware))))]
+    (if (< (query-execution/get-result-rows (hash/sha3-256 (json/generate-string (qp.util/select-keys-for-hashing-download query)))) 5000)
+      (run-query-for-card-async
+        card-id export-format
+        :parameters   parameters
+        :ignore_cache false
+        :context      (dataset-api/export-format->context export-format)
+        :middleware   {:process-viz-settings? false})
+      (run-query-for-card-async
+        card-id export-format
+        :parameters  parameters
+        :constraints nil
+        :context     (dataset-api/export-format->context export-format)
+        :middleware  {:process-viz-settings?  true
+                      :skip-results-metadata? true
+                      :ignore-cached-results? true
+                      :format-rows?           false
+                      :js-int-to-string?      false}))
+    )
+  )

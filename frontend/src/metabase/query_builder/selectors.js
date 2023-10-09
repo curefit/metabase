@@ -936,16 +936,17 @@ export const getIsAdditionalInfoVisible = createSelector(
 
 export const getCardAutocompleteResultsFn = state => {
   return function autocompleteResults(query) {
-    const dbId = state.qb.card?.dataset_query?.database;
-    if (!dbId) {
-      return [];
-    }
+    // const dbId = state.qb.card?.dataset_query?.database;
+    // if (!dbId) {
+    //   return [];
+    // }
 
-    const apiCall = MetabaseApi.db_card_autocomplete_suggestions({
-      dbId,
-      query,
-    });
-    return apiCall;
+    // const apiCall = MetabaseApi.db_card_autocomplete_suggestions({
+    //   dbId,
+    //   query,
+    // });
+    // return apiCall;
+    return [];
   };
 };
 
