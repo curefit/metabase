@@ -156,7 +156,7 @@
   [ignore-cache? query-hash max-age-seconds rff context]
   (try
     (or (when-not ignore-cache?
-          (log/tracef "Looking for cached results for query with hash %s younger than %s\n"
+          (log/trace "Looking for cached results for query with hash %s younger than %s\n"
                       (pr-str (i/short-hex-hash query-hash)) (u/format-seconds max-age-seconds))
           (i/with-cached-results *backend* query-hash max-age-seconds [is]
             (when is

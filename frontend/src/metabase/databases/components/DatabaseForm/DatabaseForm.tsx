@@ -8,9 +8,9 @@ import FormProvider from "metabase/core/components/FormProvider";
 import FormFooter from "metabase/core/components/FormFooter";
 import FormSubmitButton from "metabase/core/components/FormSubmitButton";
 import FormErrorMessage from "metabase/core/components/FormErrorMessage";
-import { PLUGIN_CACHING } from "metabase/plugins";
+import FormNumericInput from "metabase/core/components/FormNumericInput";
 import { DatabaseData, Engine } from "metabase-types/api";
-import { getEngines, getIsCachingEnabled, getIsHosted } from "../../selectors";
+import { getEngines, getIsHosted } from "../../selectors";
 import { getDefaultEngineKey } from "../../utils/engine";
 import {
   getSubmitValues,
@@ -27,6 +27,7 @@ interface DatabaseFormProps {
   initialValues?: DatabaseData;
   autofocusFieldName?: string;
   isAdvanced?: boolean;
+  isCachingEnabled?: boolean;
   onSubmit?: (values: DatabaseData) => void;
   onEngineChange?: (engineKey: string | undefined) => void;
   onCancel?: () => void;
@@ -37,6 +38,7 @@ export const DatabaseForm = ({
   initialValues: initialData,
   autofocusFieldName,
   isAdvanced = false,
+  isCachingEnabled = true,
   onSubmit,
   onCancel,
   onEngineChange,
@@ -44,7 +46,7 @@ export const DatabaseForm = ({
 }: DatabaseFormProps): JSX.Element => {
   const engines = useSelector(getEngines);
   const isHosted = useSelector(getIsHosted);
-  const isCachingEnabled = useSelector(getIsCachingEnabled);
+  // const isCachingEnabled = useSelector(getIsCachingEnabled);
   const initialEngineKey = getEngineKey(engines, initialData, isAdvanced);
   const [engineKey, setEngineKey] = useState(initialEngineKey);
   const engine = getEngine(engines, engineKey);
@@ -62,6 +64,9 @@ export const DatabaseForm = ({
 
   const handleSubmit = useCallback(
     (values: DatabaseData) => {
+      if (!values.cache_ttl) {
+        values.cache_ttl = null;
+      }
       return onSubmit?.(getSubmitValues(engine, values, isAdvanced));
     },
     [engine, isAdvanced, onSubmit],
@@ -156,7 +161,11 @@ const DatabaseFormBody = ({
           data-kek={field.name}
         />
       ))}
-      {isCachingEnabled && <PLUGIN_CACHING.DatabaseCacheTimeField />}
+      <FormNumericInput
+        name="cache_ttl"
+        placeholder={t`Cache TTL in Hours`}
+        title={t`Caching`}
+      />
       <DatabaseFormFooter
         isDirty={dirty}
         isAdvanced={isAdvanced}

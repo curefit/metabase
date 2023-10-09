@@ -21,7 +21,8 @@
   (let [query (-> query
                   (assoc-in [:constraints :max-results] 1)
                   (assoc-in [:constraints :max-results-bare-rows] 1)
-                  (assoc-in [:info :executed-by] api/*current-user-id*))]
+                  (assoc-in [:info :executed-by] api/*current-user-id*)
+                  (assoc-in [:cache-ttl] 5000))]
     ;; need add the constraints above before calculating hash because those affect the hash
     ;;
     ;; (normally middleware takes care of calculating query hashes for 'userland' queries but this is not

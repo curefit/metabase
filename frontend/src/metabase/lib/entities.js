@@ -242,6 +242,11 @@ export function createEntity(def) {
     )(
       (entityObject, updatedObject = null, { notify } = {}) =>
         async (dispatch, getState) => {
+          if ("cache_ttl" in entityObject) {
+            if (entityObject.cache_ttl === "") {
+              entityObject.cache_ttl = null;
+            }
+          }
           // save the original object for undo
           const originalObject = getObject(getState(), {
             entityId: entityObject.id,

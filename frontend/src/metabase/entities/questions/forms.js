@@ -3,8 +3,6 @@ import { t } from "ttag";
 import MetabaseSettings from "metabase/lib/settings";
 import validate from "metabase/lib/validate";
 
-import { PLUGIN_CACHING } from "metabase/plugins";
-
 const FORM_FIELDS = [
   { name: "name", title: t`Name`, validate: validate.required() },
   {
@@ -30,13 +28,14 @@ export default {
     fields: () => {
       const fields = [...FORM_FIELDS];
       if (
-        MetabaseSettings.get("enable-query-caching") &&
-        PLUGIN_CACHING.cacheTTLFormField
+        MetabaseSettings.get("enable-query-caching")
+        // PLUGIN_CACHING.cacheTTLFormField
       ) {
         fields.push({
-          ...PLUGIN_CACHING.cacheTTLFormField,
+          name: "cache_ttl",
           title: t`Caching`,
-          type: "questionCacheTTL",
+          type: "number",
+          placeholder: t`Cache TTL in Hours`,
         });
       }
       return fields;

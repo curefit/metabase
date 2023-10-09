@@ -33,12 +33,24 @@
   (u/prog1 query-execution
     (validate-context context)))
 
+(defn get-slow-fast
+  "Fetch the speed of the query for Trino Queue."
+  [card-id]
+  (let [running-time (db/select-one-field :running_time QueryExecution :card_id card-id :cache_hit false {:order-by [[:started_at :desc]]})]
+    (if running-time
+      (if (<= running-time 120000)
+        "fast"
+        "slow")
+      "not-available")))
+
 (defn get-result-rows
   "Fetch the result rows for query with QUERY-HASH if available.
    Returns `nil` if no information is available."
   ^Integer [^bytes query-hash]
   {:pre [(instance? (Class/forName "[B") query-hash)]}
-  (db/select-one-field :result_rows QueryExecution :hash query-hash {:order-by [[:started_at :desc]]}))
+  (if (some? (db/select-one-field :result_rows QueryExecution :hash query-hash {:order-by [[:started_at :desc]]}))
+    (db/select-one-field :result_rows QueryExecution :hash query-hash {:order-by [[:started_at :desc]]})
+    6000))
 
 (t2/define-after-select :model/QueryExecution
   [{:keys [result_rows] :as query-execution}]

@@ -2,7 +2,7 @@ import { t } from "ttag";
 
 import EditableText from "metabase/core/components/EditableText";
 
-import { PLUGIN_MODERATION, PLUGIN_CACHING } from "metabase/plugins";
+import { PLUGIN_MODERATION } from "metabase/plugins";
 
 import * as Urls from "metabase/lib/urls";
 
@@ -27,11 +27,12 @@ export const QuestionInfoSidebar = ({
   question,
   onSave,
 }: QuestionInfoSidebarProps) => {
+  const cache_ttl = question.cacheTTL();
   const description = question.description();
   const canWrite = question.canWrite();
   const isDataset = question.isDataset();
   const isPersisted = isDataset && question.isPersisted();
-  const hasCacheSection = PLUGIN_CACHING.hasQuestionCacheSection(question);
+  const hasCacheSection = true;
 
   const handleSave = (description: string | null) => {
     if (question.description() !== description) {
@@ -41,7 +42,7 @@ export const QuestionInfoSidebar = ({
 
   const handleUpdateCacheTTL = (cache_ttl: number | undefined) => {
     if (question.cacheTTL() !== cache_ttl) {
-      return onSave(question.setCacheTTL(cache_ttl));
+      return onSave(question.setCacheTTL(parseInt(cache_ttl)));
     }
   };
 
@@ -79,9 +80,15 @@ export const QuestionInfoSidebar = ({
 
       {hasCacheSection && (
         <ContentSection extraPadding>
-          <PLUGIN_CACHING.QuestionCacheSection
-            question={question}
-            onSave={handleUpdateCacheTTL}
+          <HeaderContainer>
+            <h3>{t`Caching`}</h3>
+          </HeaderContainer>
+          <EditableText
+            initialValue={cache_ttl}
+            isDisabled={!canWrite}
+            onChange={handleUpdateCacheTTL}
+            placeholder={t`Cache TTL in Hours`}
+            key={`question-cache-ttl-${cache_ttl}`}
           />
         </ContentSection>
       )}

@@ -4,6 +4,7 @@ import cx from "classnames";
 import MetabaseSettings from "metabase/lib/settings";
 import NightModeIcon from "metabase/components/icons/NightModeIcon";
 import RefreshWidget from "metabase/dashboard/components/RefreshWidget";
+import DashboardRefreshIcon from "metabase/components/icons/DashboardRefreshIcon";
 import Tooltip from "metabase/core/components/Tooltip";
 import FullscreenIcon from "metabase/components/icons/FullscreenIcon";
 
@@ -29,6 +30,7 @@ export const getDashboardActions = (
     onSharingClick,
     onFullscreenChange,
     hasNightModeToggle,
+    fetchDashboardCardData,
   },
 ) => {
   const isPublicLinksEnabled = MetabaseSettings.get("enable-public-sharing");
@@ -121,6 +123,24 @@ export const getDashboardActions = (
         setRefreshElapsedHook={setRefreshElapsedHook}
         onChangePeriod={onRefreshPeriodChange}
       />,
+    );
+  }
+
+  if (!isEditing && !isEmpty) {
+    buttons.push(
+      <span data-metabase-event={"Dashboard Reload;"}>
+        <DashboardHeaderButton
+          onClick={() =>
+            fetchDashboardCardData({
+              reload: true,
+              clearCache: true,
+              ignoreCache: true,
+            })
+          }
+        >
+          <DashboardRefreshIcon />
+        </DashboardHeaderButton>
+      </span>,
     );
   }
 

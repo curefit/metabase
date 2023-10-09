@@ -543,6 +543,8 @@
 (defn statement-or-prepared-statement
   "Create a statement or a prepared statement. Should be called from [[with-open]]."
   ^Statement [driver conn sql params canceled-chan]
+  (if (= driver (keyword "starburst"))
+    (.setClientInfo conn (doto (java.util.Properties.) (.putAll {"ClientTags" (str "")}))))
   (if (use-statement? driver params)
     (statement* driver conn canceled-chan)
     (prepared-statement* driver conn sql params canceled-chan)))
@@ -666,9 +668,9 @@
    (let [remark   (qp.util/query->remark driver outer-query)
          sql      (str "-- " remark "\n" sql)
          max-rows (limit/determine-query-max-rows outer-query)]
-     (execute-reducible-query driver sql params max-rows context respond)))
+     (execute-reducible-query driver sql params max-rows context respond outer-query)))
 
-  ([driver sql params max-rows context respond]
+  ([driver sql params max-rows context respond outer-query]
    (do-with-connection-with-options
     driver
     (qp.store/database)
@@ -676,6 +678,9 @@
     (fn [^Connection conn]
       (with-open [stmt          (statement-or-prepared-statement driver conn sql params (qp.context/canceled-chan context))
                   ^ResultSet rs (try
+                                  (if (= driver (keyword "starburst"))
+                                    (.setClientInfo conn (doto (java.util.Properties.)
+                                                           (.putAll {"ClientTags" (qp.util/get-client-tags outer-query)}))))
                                   (execute-statement-or-prepared-statement! driver stmt max-rows params sql)
                                   (catch Throwable e
                                     (throw (ex-info (tru "Error executing query: {0}" (ex-message e))

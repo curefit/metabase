@@ -805,7 +805,7 @@ saved later when it is ready."
    collection_id          (s/maybe su/IntGreaterThanZero)
    collection_position    (s/maybe su/IntGreaterThanZero)
    result_metadata        (s/maybe qr/ResultsMetadata)
-   cache_ttl              (s/maybe su/IntGreaterThanZero)
+   cache_ttl              (s/maybe su/IntGreaterThanOrEqualToZero)
    collection_preview     (s/maybe s/Bool)}
   (let [card-before-update (t2/hydrate (api/write-check Card id)
                                     [:moderation_reviews :moderator_details])]

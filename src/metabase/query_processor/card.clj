@@ -53,14 +53,26 @@
   metabase-enterprise.advanced-config.caching
   [_card _dashboard _database])
 
+;(defn- ttl-hierarchy
+;  "Returns the cache ttl (in seconds), by first checking whether there is a stored value for the database,
+;    dashboard, or card (in that order of increasing preference), and if all of those don't exist, then the
+;    `query-magic-ttl`, which is based on average execution time."
+;  [card dashboard database query]
+;  (when (public-settings/enable-query-caching)
+;    (or (granular-ttl card dashboard database)
+;        (query-magic-ttl query))))
+
 (defn- ttl-hierarchy
   "Returns the cache ttl (in seconds), by first checking whether there is a stored value for the database,
-    dashboard, or card (in that order of increasing preference), and if all of those don't exist, then the
-    `query-magic-ttl`, which is based on average execution time."
+  dashboard, or card (in that order of increasing preference), and if all of those don't exist, then the
+  `query-magic-ttl`, which is based on average execution time."
   [card dashboard database query]
   (when (public-settings/enable-query-caching)
-    (or (granular-ttl card dashboard database)
-        (query-magic-ttl query))))
+    (let [ttls (map :cache_ttl [card dashboard database])
+          most-granular-ttl (first (filter some? ttls))]
+      (or (when most-granular-ttl ; stored TTLs are in hours; convert to seconds
+            (* most-granular-ttl 3600))
+          (query-magic-ttl query)))))
 
 (defn query-for-card
   "Generate a query for a saved Card"

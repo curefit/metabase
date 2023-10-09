@@ -1691,6 +1691,7 @@
           :embedded-dashboard
           :embedded-question
           :json-download
+          :api-download
           :map-tiles
           :public-dashboard
           :public-question
