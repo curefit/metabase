@@ -46,31 +46,31 @@
     (hydrate tables :db)
     (filterv mi/can-read? tables)))
 
-(defn get-data-lag [table-name schema-name]
-  (try
-    (let [
-          ;url (str "http://127.0.0.1:5000/api/v1/metadata")
-          url (str (config/config-str :mb-garuda-backend) "api/v1/metadata")
-          request-body {:tableName table-name :schemaName schema-name}
-          ]
-      (println "API URL:" url)
-      ;(println "Request Body:" request-body)
-
-      (let [response (client/post url
-                                  {:body (json/generate-string request-body)
-                                   :content-type :json
-                                   :socket-timeout 10000
-                                   :conn-timeout 10000
-                                   :conn-request-timeout 10000})]
-        (println "API Response:")
-        (println (json/parse-string (:body response)))
-        (json/parse-string (:body response))))
-    (catch java.net.SocketTimeoutException e
-      (println "Error: Request timed out")
-      nil)
-    (catch Throwable e
-      (println "Error occurred while calling API: " (.getMessage e))
-      nil)))
+;(defn get-data-lag [table-name schema-name]
+;  (try
+;    (let [
+;          ;url (str "http://127.0.0.1:5000/api/v1/metadata")
+;          url (str (config/config-str :mb-garuda-backend) "api/v1/metadata")
+;          request-body {:tableName table-name :schemaName schema-name}
+;          ]
+;      (println "API URL:" url)
+;      ;(println "Request Body:" request-body)
+;
+;      (let [response (client/post url
+;                                  {:body (json/generate-string request-body)
+;                                   :content-type :json
+;                                   :socket-timeout 10000
+;                                   :conn-timeout 10000
+;                                   :conn-request-timeout 10000})]
+;        (println "API Response:")
+;        (println (json/parse-string (:body response)))
+;        (json/parse-string (:body response))))
+;    (catch java.net.SocketTimeoutException e
+;      (println "Error: Request timed out")
+;      nil)
+;    (catch Throwable e
+;      (println "Error occurred while calling API: " (.getMessage e))
+;      nil)))
 
 
 (api/defendpoint GET "/:id"
@@ -81,7 +81,8 @@
                             api/read-check)]
     (-> (api-perm-check-fn Table id)
         (hydrate :db :pk_field)
-        (assoc :latest_sync_timestamp (get-data-lag (db/select-one-field :name 'Table, :id id) (db/select-one-field :schema 'Table, :id id))))))
+        ;(assoc :latest_sync_timestamp (get-data-lag (db/select-one-field :name 'Table, :id id) (db/select-one-field :schema 'Table, :id id)))
+        )))
 
 (defn- update-table!*
   "Takes an existing table and the changes, updates in the database and optionally calls `table/update-field-positions!`

@@ -47,13 +47,13 @@
    :mb-qp-cache-backend    "db"
    :mb-data-lake-models-cache-location "s3://cf-analytics-datalake/metabase"
    ;:mb-garuda-backend      "http://localhost:9096/"
-   :mb-garuda-backend      "http://dataplatform-garuda.production.cure.fit.internal/"
-   :mb-watson-backend      "http://watson.alpha.cure.fit.internal/"
+   ;:mb-garuda-backend      "http://dataplatform-garuda.production.cure.fit.internal/"
+   ;:mb-watson-backend      "http://watson.alpha.cure.fit.internal/"
    :mb-prompt-file-path    "/Users/abhishek.gedela/templates.json"
    :mb-embedding-threshold    "0.02"
    :mb-embedding-memoization  "86400"
    :mb-prompt-memoization     "86400"
-   :mb-metabot-group-name     "Metabot"
+   ;:mb-metabot-group-name     "Metabot"
    })
 
 ;; separate map for EE stuff so merge conflicts aren't annoying.

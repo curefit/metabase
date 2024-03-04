@@ -214,40 +214,40 @@
     }
    ])
 
-(defn call-warnings-api [id]
-  (try
-    (let [response (client/post (str (config/config-str :mb-garuda-backend) "api/v1/metabase/warnings")
-                                {:body (json/generate-string {:cardIds [id]})
-                                 :content-type :json
-                                 :socket-timeout 2000
-                                 :conn-timeout 2000
-                                 :conn-request-timeout 2000})
-          res-warnings warnings]
-      (json/parse-string (:body response))
-      )
-    (catch java.net.SocketTimeoutException e
-      (println "Error: Request timed out")
-      nil)
-    (catch Throwable e
-      (println "Error occurred while calling API: " (.getMessage e))
-      nil)))
+;(defn call-warnings-api [id]
+;  (try
+;    (let [response (client/post (str (config/config-str :mb-garuda-backend) "api/v1/metabase/warnings")
+;                                {:body (json/generate-string {:cardIds [id]})
+;                                 :content-type :json
+;                                 :socket-timeout 2000
+;                                 :conn-timeout 2000
+;                                 :conn-request-timeout 2000})
+;          res-warnings warnings]
+;      (json/parse-string (:body response))
+;      )
+;    (catch java.net.SocketTimeoutException e
+;      (println "Error: Request timed out")
+;      nil)
+;    (catch Throwable e
+;      (println "Error occurred while calling API: " (.getMessage e))
+;      nil)))
+;
+;(api/defendpoint GET "/:id/warnings"
+;                 "Get latest Warnings for a Card."
+;                 [id]
+;                 (call-warnings-api id))
 
-(api/defendpoint GET "/:id/warnings"
-                 "Get latest Warnings for a Card."
-                 [id]
-                 (call-warnings-api id))
-
-(defn add-warnings-to-card
-  [{:keys [id] :as item}]
-  (try
-    (let [
-          ;json-response warnings
-          json-response (call-warnings-api id)
-          ]
-      (assoc item :warnings json-response))
-    (catch java.util.concurrent.TimeoutException e
-      (println "Call to warnings API timed out!")
-      (assoc item :warnings "Timeout"))))
+;(defn add-warnings-to-card
+;  [{:keys [id] :as item}]
+;  (try
+;    (let [
+;          ;json-response warnings
+;          json-response (call-warnings-api id)
+;          ]
+;      (assoc item :warnings json-response))
+;    (catch java.util.concurrent.TimeoutException e
+;      (println "Call to warnings API timed out!")
+;      (assoc item :warnings "Timeout"))))
 
 #_{:clj-kondo/ignore [:deprecated-var]}
 (api/defendpoint-schema GET "/:id"
@@ -266,7 +266,8 @@
                    (:dataset raw-card) (hydrate :persisted))
                  api/read-check
                  (last-edit/with-last-edit-info :card)
-                 (add-warnings-to-card))]
+                 ;(add-warnings-to-card)
+                 )]
     (u/prog1 card
       (when-not (Boolean/parseBoolean ignore_view)
         (events/publish-event! :card-read (assoc <> :actor_id api/*current-user-id*))))))
