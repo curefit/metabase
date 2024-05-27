@@ -62,7 +62,7 @@
   (let [join-count (count (re-seq #"(?i)JOIN" input-str))
         has-select (re-find #"(?i)SELECT" input-str)
         has-where (re-find #"(?i)WHERE" input-str)]
-    (cond (and (> join-count 5)) "slow"
+    (cond (and (> join-count 10)) "slow"
           (and has-select (not has-where)) "slow"
           :else "fast")))
 
@@ -72,16 +72,22 @@
   (if query-hash
     (do
       (assert (instance? (Class/forName "[B") query-hash))
-      (format "%s, %s,%s, %s, %s, %s, %s"
+      (let [speed (let [slow-fast (query-execution/get-slow-fast (if card-id card-id -999))]
+                           (if (= slow-fast "not-available")
+                             (query-speed query)
+                             slow-fast))]
+        (println "------------------in client tags func----------------------")
+        (println (query-execution/get-slow-fast (if card-id card-id -999)))
+        (format "%s, %s,%s, %s, %s, %s, %s"
               ;      ['metabase-userid', 'card-id', 'email-id', 'Slow/Fast', 'Priveleged/Not Priveleged', 'Adhoc/Scheduled/Metabase Context']
               (if executed-by executed-by -1)
               (if card-id card-id -999)
               (user/get-email-id executed-by)
               ;(query-execution/get-slow-fast (if card-id card-id -999))
-              (query-speed query)
+              speed
               (user/get-group-name executed-by)
               (str (name context))
-              (codecs/bytes->hex query-hash)))
+              (codecs/bytes->hex query-hash))))
     (str "-1, -999, default@curefit.com, not_available, non-priority, scheduled, default-hash")))
 
 ;;; ------------------------------------------------- Normalization --------------------------------------------------

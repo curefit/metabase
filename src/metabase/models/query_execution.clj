@@ -34,7 +34,21 @@
 (defn get-slow-fast
   "Fetch the speed of the query for Trino Queue."
   [card-id]
-  (let [running-time (db/select-one-field :running_time QueryExecution :card_id card-id :cache_hit false {:order-by [[:started_at :desc]]})]
+  (let [running-time (db/select-one-field
+                              :running_time
+                              QueryExecution
+                              {:where [:and
+                                       [:= :card_id card-id]
+                                       [:= :cache_hit false]
+                                       [:or
+                                        [:= :error nil]
+                                        [:and
+                                         [:not= :error nil]
+                                         [:> :running_time 120000]]]]
+                               :order-by [[:started_at :desc]]})]
+;;   running-time (db/select-one-field :running_time QueryExecution :card_id card-id :cache_hit false :error  {:order-by [[:started_at :desc]]})]
+    (println "------------------in get-slow-fast func----------------------")
+    (println running-time)
     (if running-time
       (if (<= running-time 120000)
         "fast"
