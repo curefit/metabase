@@ -77,6 +77,8 @@ dev/src/dev/nocommit/
 /frontend/src/cljs
 /frontend/src/cljs_release
 .shadow-cljs
+.github/
+.swc/
 
 # lsp: ignore all but the config file
 .lsp/*
